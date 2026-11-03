@@ -1,0 +1,3 @@
+<% if (pages > 1) { const mk = (n) => { const u = new URLSearchParams(Object.entries(query).filter(([k, v]) => typeof v === 'string' && k !== 'page')); u.set('page', n); return '?' + u; }; %>
+<nav class="pager" aria-label="Pages"><% for (let i = 1; i <= pages; i++) { %><% if (i === page) { %><span class="cur"><%= i %></span><% } else { %><a href="<%= mk(i) %>"><%= i %></a><% } %><% } %></nav>
+<% } %>

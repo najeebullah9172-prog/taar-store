@@ -1,0 +1,162 @@
+<%
+  // Builds a link to this listing with one filter value removed (or the page changed).
+  function qs(changes) {
+    const params = new URLSearchParams();
+    const src = Object.assign({}, query);
+    for (const [k, v] of Object.entries(src)) {
+      if (k === 'spec' && v && typeof v === 'object') {
+        for (const [sk, sv] of Object.entries(v)) for (const one of [].concat(sv)) params.append(`spec[${sk}]`, one);
+      } else if (typeof v === 'string' || Array.isArray(v)) {
+        for (const one of [].concat(v)) params.append(k, one);
+      }
+    }
+    for (const [k, v] of Object.entries(changes)) {
+      if (v && v.remove !== undefined) {
+        const keep = params.getAll(k).filter(x => x !== v.remove);
+        params.delete(k); keep.forEach(x => params.append(k, x));
+      } else if (v === null) params.delete(k); else params.set(k, v);
+    }
+    if (!('page' in changes)) params.delete('page');
+    const s = params.toString();
+    return path + (s ? '?' + s : '');
+  }
+  const chips = [];
+  if (!locals.brandPage) for (const b of filters.brands) { const f = facets.brands.find(x => x.slug === b); chips.push({ label: f ? f.name : b, href: qs({ brand: { remove: b } }) }); }
+  for (const [k, vals] of Object.entries(filters.specs)) for (const v of vals) chips.push({ label: v, href: qs({ [`spec[${k}]`]: { remove: v } }) });
+  if (filters.min != null) chips.push({ label: 'Over ' + money(filters.min), href: qs({ min: null }) });
+  if (filters.max != null) chips.push({ label: 'Under ' + money(filters.max), href: qs({ max: null }) });
+  if (filters.inStock) chips.push({ label: 'In stock', href: qs({ stock: null }) });
+  if (filters.rating) chips.push({ label: filters.rating + ' stars and up', href: qs({ rating: null }) });
+  const clearHref = path + (scope.q ? '?q=' + encodeURIComponent(scope.q) : '');
+  locals.jsonLd = [{
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Home', item: baseUrl + '/' }].concat(crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 2, name: c.name, item: c.href ? baseUrl + c.href : undefined })))
+  }];
+%>
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <ol class="crumbs" aria-label="Breadcrumb">
+    <li><a href="/">Home</a></li>
+    <% for (const c of crumbs) { %><li aria-hidden="true"><svg class="i"><use href="#i-right"/></svg></li><li><% if (c.href) { %><a href="<%= c.href %>"><%= c.name %></a><% } else { %><span aria-current="page"><%= c.name %></span><% } %></li><% } %>
+  </ol>
+  <header class="page-head">
+    <h1><%= heading %></h1>
+    <% if (intro) { %><p><%= intro %></p><% } %>
+  </header>
+
+  <div class="listing">
+    <aside class="filters-side" data-filters-home aria-label="Filters">
+      <form id="filters" method="get" action="<%= path %>" data-filters>
+        <% if (scope.q) { %><input type="hidden" name="q" value="<%= scope.q %>"><% } %>
+        <% if (filters.sort) { %><input type="hidden" name="sort" value="<%= filters.sort %>"><% } %>
+
+        <details class="fgroup" open>
+          <summary>Availability<svg class="i"><use href="#i-down"/></svg></summary>
+          <div class="opts"><label class="fopt"><input type="checkbox" name="stock" value="1" <%= filters.inStock ? 'checked' : '' %>>In stock only</label></div>
+        </details>
+
+        <details class="fgroup" open>
+          <summary>Price<svg class="i"><use href="#i-down"/></svg></summary>
+          <div class="price-range">
+            <label class="sr" for="pmin">Minimum price</label>
+            <input class="input" id="pmin" name="min" type="number" inputmode="numeric" min="0" step="500" placeholder="Rs <%= num(facets.price.min) %>" value="<%= filters.min ?? '' %>">
+            <span class="muted">to</span>
+            <label class="sr" for="pmax">Maximum price</label>
+            <input class="input" id="pmax" name="max" type="number" inputmode="numeric" min="0" step="500" placeholder="Rs <%= num(facets.price.max) %>" value="<%= filters.max ?? '' %>">
+          </div>
+        </details>
+
+        <% if (!locals.brandPage && facets.brands.length > 1) { %>
+        <details class="fgroup" open>
+          <summary>Brand<svg class="i"><use href="#i-down"/></svg></summary>
+          <div class="opts">
+            <% for (const b of facets.brands) { %>
+              <label class="fopt"><input type="checkbox" name="brand" value="<%= b.slug %>" <%= filters.brands.includes(b.slug) ? 'checked' : '' %>><%= b.name %><span class="n"><%= b.count %></span></label>
+            <% } %>
+          </div>
+        </details>
+        <% } %>
+
+        <% for (const [key, values] of Object.entries(facets.specs)) { %>
+        <details class="fgroup" <%= (filters.specs[key] || []).length || values.length <= 6 ? 'open' : '' %>>
+          <summary><%= key %><svg class="i"><use href="#i-down"/></svg></summary>
+          <div class="opts">
+            <% for (const v of values) { %>
+              <label class="fopt"><input type="checkbox" name="spec[<%= key %>]" value="<%= v.value %>" <%= (filters.specs[key] || []).includes(v.value) ? 'checked' : '' %>><%= v.value %><span class="n"><%= v.count %></span></label>
+            <% } %>
+          </div>
+        </details>
+        <% } %>
+
+        <details class="fgroup" open>
+          <summary>Customer rating<svg class="i"><use href="#i-down"/></svg></summary>
+          <div class="opts">
+            <label class="fopt"><input type="radio" name="rating" value="" <%= !filters.rating ? 'checked' : '' %>>Any rating</label>
+            <label class="fopt"><input type="radio" name="rating" value="4" <%= filters.rating === 4 ? 'checked' : '' %>>4 stars and up</label>
+            <label class="fopt"><input type="radio" name="rating" value="3" <%= filters.rating === 3 ? 'checked' : '' %>>3 stars and up</label>
+          </div>
+        </details>
+        <div style="padding-top:16px" class="row">
+          <button class="btn btn-ink btn-sm grow" type="submit">Show results</button>
+          <% if (activeCount) { %><a class="btn btn-ghost btn-sm" href="<%= clearHref %>">Clear all</a><% } %>
+        </div>
+      </form>
+    </aside>
+
+    <section aria-label="Products">
+      <div class="toolbar">
+        <div class="row">
+          <button class="btn btn-line btn-sm filter-btn" type="button" data-open="filters"><svg class="i i-sm"><use href="#i-filter"/></svg>Filters<% if (activeCount) { %> (<%= activeCount %>)<% } %></button>
+          <span class="count"><%= result.total %> product<%= result.total === 1 ? '' : 's' %></span>
+        </div>
+        <form class="sort" method="get" action="<%= path %>" data-sort>
+          <% for (const [k, v] of Object.entries(query)) { if (k === 'sort' || k === 'page') continue; if (k === 'spec' && v && typeof v === 'object') { for (const [sk, sv] of Object.entries(v)) for (const one of [].concat(sv)) { %><input type="hidden" name="spec[<%= sk %>]" value="<%= one %>"><% } } else if (typeof v === 'string' || Array.isArray(v)) { for (const one of [].concat(v)) { %><input type="hidden" name="<%= k %>" value="<%= one %>"><% } } } %>
+          <label for="sort-by" class="muted">Sort by</label>
+          <select class="select" id="sort-by" name="sort">
+            <% if (scope.q) { %><option value="" <%= !filters.sort ? 'selected' : '' %>>Best match</option><% } %>
+            <% for (const [k, label] of Object.entries(sortLabels)) { %><option value="<%= k %>" <%= (filters.sort || (scope.q ? '' : 'featured')) === k ? 'selected' : '' %>><%= label %></option><% } %>
+          </select>
+          <noscript><button class="btn btn-line btn-sm" type="submit">Sort</button></noscript>
+        </form>
+      </div>
+
+      <% if (chips.length) { %>
+        <div class="chips">
+          <% for (const c of chips) { %><a class="chip" href="<%= c.href %>"><%= c.label %><svg class="i"><use href="#i-close"/></svg><span class="sr">Remove filter</span></a><% } %>
+          <a class="chip" href="<%= clearHref %>" style="border-style:dashed">Clear all</a>
+        </div>
+      <% } %>
+
+      <% if (result.items.length) { %>
+        <div class="grid grid-3">
+          <% for (const p of result.items) { %><%- include('../partials/card', { p }) %><% } %>
+        </div>
+        <% if (result.pages > 1) { %>
+          <nav class="pager" aria-label="Pages">
+            <% if (result.page > 1) { %><a href="<%= qs({ page: String(result.page - 1) }) %>" aria-label="Previous page"><svg class="i i-sm"><use href="#i-left"/></svg></a><% } %>
+            <% for (let i = 1; i <= result.pages; i++) { %>
+              <% if (i === result.page) { %><span class="cur" aria-current="page"><%= i %></span><% } else { %><a href="<%= qs({ page: String(i) }) %>"><%= i %></a><% } %>
+            <% } %>
+            <% if (result.page < result.pages) { %><a href="<%= qs({ page: String(result.page + 1) }) %>" aria-label="Next page"><svg class="i i-sm"><use href="#i-right"/></svg></a><% } %>
+          </nav>
+        <% } %>
+      <% } else { %>
+        <div class="empty">
+          <svg class="i"><use href="#i-search"/></svg>
+          <h2><%= scope.q ? 'No products match your search' : 'No products match these filters' %></h2>
+          <p><%= scope.q ? 'Check the spelling, or try a broader word like "phone" or "laptop".' : 'Remove a filter or widen the price range to see more.' %></p>
+          <% if (activeCount) { %><a class="btn btn-ink" href="<%= clearHref %>">Clear filters</a><% } else { %><a class="btn btn-ink" href="/shop">Browse all products</a><% } %>
+        </div>
+      <% } %>
+    </section>
+  </div>
+</div>
+
+<div class="drawer drawer-left" id="drawer-filters" aria-hidden="true">
+  <div class="drawer-bg" data-close></div>
+  <section class="drawer-panel" role="dialog" aria-modal="true" aria-label="Filters">
+    <div class="drawer-head"><h2>Filters</h2><button class="icon-btn" type="button" data-close aria-label="Close filters"><svg class="i"><use href="#i-close"/></svg></button></div>
+    <div class="drawer-body" data-filters-drawer style="padding-top:18px"></div>
+  </section>
+</div>
+<%- include('../partials/bottom', locals) %>

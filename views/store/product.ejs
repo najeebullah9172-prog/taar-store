@@ -1,0 +1,221 @@
+<%
+  const p = product;
+  const first = p.variants.find(v => v.stock > 0) || p.variants[0];
+  const totalReviews = reviews.dist.reduce((s, d) => s + d.count, 0);
+  const avail = (v) => v.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+  locals.jsonLd = [{
+    '@context': 'https://schema.org', '@type': 'Product', name: p.name, description: p.short_desc,
+    image: p.images.slice(0, 4).map(i => baseUrl + i.url), sku: first.sku,
+    brand: { '@type': 'Brand', name: p.brand }, category: p.category,
+    offers: p.variants.length > 1
+      ? { '@type': 'AggregateOffer', priceCurrency: 'PKR', lowPrice: p.price, highPrice: p.price_max, offerCount: p.variants.length, availability: p.in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' }
+      : { '@type': 'Offer', priceCurrency: 'PKR', price: first.price, availability: avail(first), url: baseUrl + '/p/' + p.slug, itemCondition: 'https://schema.org/NewCondition' },
+    ...(p.rating_count ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: p.rating_avg, reviewCount: p.rating_count } } : {}),
+  }, {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: baseUrl + '/' },
+      { '@type': 'ListItem', position: 2, name: p.category, item: baseUrl + '/c/' + p.category_slug },
+      { '@type': 'ListItem', position: 3, name: p.name },
+    ],
+  }];
+  locals.scripts = ['product'];
+  const firstImgs = p.images.filter(i => !i.option_value || i.option_value === first.options.Color);
+  const specEntries = Object.entries(p.specs);
+%>
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <ol class="crumbs" aria-label="Breadcrumb">
+    <li><a href="/">Home</a></li><li aria-hidden="true"><svg class="i"><use href="#i-right"/></svg></li>
+    <li><a href="/c/<%= p.category_slug %>"><%= p.category %></a></li><li aria-hidden="true"><svg class="i"><use href="#i-right"/></svg></li>
+    <li><span aria-current="page"><%= p.name %></span></li>
+  </ol>
+
+  <div class="pdp" data-pdp>
+    <div class="gallery" data-gallery>
+      <div class="gallery-thumbs" data-thumbs aria-label="Product photos">
+        <% firstImgs.forEach((img, i) => { %>
+          <button type="button" data-thumb="<%= i %>" aria-current="<%= i === 0 %>" aria-label="Show photo <%= i + 1 %>"><img src="<%= img.thumb_url || img.url %>" alt="" loading="lazy"></button>
+        <% }) %>
+      </div>
+      <div class="gallery-main" data-main tabindex="0" aria-label="Product photo. Press Enter to enlarge.">
+        <img src="<%= firstImgs[0] ? firstImgs[0].url : '' %>" alt="<%= firstImgs[0] ? firstImgs[0].alt : p.name %>" width="800" height="800" data-main-img fetchpriority="high">
+        <button class="icon-btn nav prev" type="button" data-step="-1" aria-label="Previous photo"><svg class="i"><use href="#i-left"/></svg></button>
+        <button class="icon-btn nav next" type="button" data-step="1" aria-label="Next photo"><svg class="i"><use href="#i-right"/></svg></button>
+        <span class="zoom-hint"><svg class="i i-sm"><use href="#i-zoom"/></svg><span class="hint-mouse">Hover to zoom, click to enlarge</span><span class="hint-touch">Tap to enlarge</span></span>
+      </div>
+    </div>
+
+    <div class="buybox">
+      <a class="brand-link" href="/brand/<%= p.brand_slug %>"><%= p.brand %></a>
+      <h1><%= p.name %></h1>
+      <% if (p.rating_count) { %>
+        <a class="rating-link" href="#reviews">
+          <span class="stars" aria-hidden="true"><% for (let s = 1; s <= 5; s++) { %><svg class="i <%= s <= Math.round(p.rating_avg) ? 'on' : 'off' %>"><use href="#i-star"/></svg><% } %></span>
+          <span><%= p.rating_avg.toFixed(1) %> from <%= p.rating_count %> review<%= p.rating_count === 1 ? '' : 's' %></span>
+        </a>
+      <% } %>
+
+      <div class="price-block price" data-price-block>
+        <span class="now" data-price><%= money(first.price) %></span>
+        <span class="was" data-compare <%= first.compare_price > first.price ? '' : 'hidden' %>><%= first.compare_price ? money(first.compare_price) : '' %></span>
+        <span class="pill pill-amber" data-save <%= first.compare_price > first.price ? '' : 'hidden' %>><%= first.compare_price > first.price ? 'Save ' + money(first.compare_price - first.price) : '' %></span>
+      </div>
+      <div class="price-note">Includes taxes. Pay cash on delivery or online.</div>
+
+      <form data-buy-form action="/api/cart/items" method="post">
+        <input type="hidden" name="variant_id" value="<%= first.id %>" data-variant-input>
+        <% for (const name of p.option_names) { const values = p.option_values[name]; %>
+          <fieldset class="opt-group" style="border:0;padding:0;margin-inline:0">
+            <legend class="opt-label"><%= name %>: <span data-opt-current="<%= name %>"><%= first.options[name] %></span></legend>
+            <div class="opt-values" role="radiogroup" aria-label="<%= name %>">
+              <% for (const val of values) {
+                   const sel = first.options[name] === val;
+                   const base = p.variants.filter(v => v.options[name] === val);
+                   const minPrice = Math.min(...base.map(v => v.price));
+              %>
+                <% if (name === 'Color') { %>
+                  <button type="button" class="opt-swatch" role="radio" aria-checked="<%= sel %>" data-opt="<%= name %>" data-val="<%= val %>" aria-label="<%= val %>" title="<%= val %>"><span style="background:<%= swatch(val) %>"></span></button>
+                <% } else { %>
+                  <button type="button" class="opt-btn" role="radio" aria-checked="<%= sel %>" data-opt="<%= name %>" data-val="<%= val %>"><%= val %><% if (values.length > 1) { %><small class="num"><%= money(minPrice) %></small><% } %></button>
+                <% } %>
+              <% } %>
+            </div>
+          </fieldset>
+        <% } %>
+
+        <div class="stock-line" data-stock-line></div>
+
+        <div class="buy-row">
+          <div class="qty" data-qty>
+            <button type="button" data-qty-step="-1" aria-label="Decrease quantity"><svg class="i i-sm"><use href="#i-minus"/></svg></button>
+            <label class="sr" for="qty">Quantity</label>
+            <input id="qty" name="qty" type="number" inputmode="numeric" min="1" max="10" value="1">
+            <button type="button" data-qty-step="1" aria-label="Increase quantity"><svg class="i i-sm"><use href="#i-plus"/></svg></button>
+          </div>
+          <button class="btn btn-primary btn-lg" type="submit" data-add-btn>Add to cart</button>
+        </div>
+        <div class="buy-row-2">
+          <button class="btn btn-ink btn-lg" type="button" data-buy-now>Buy now</button>
+          <button class="btn btn-line btn-lg toggle-btn" type="button" data-wish="<%= p.id %>" aria-pressed="<%= saved %>" aria-label="Save to wishlist" title="Save to wishlist"><svg class="i i-heart-ico"><use href="#i-heart"/></svg></button>
+          <button class="btn btn-line btn-lg toggle-btn" type="button" data-compare-toggle="<%= p.id %>" aria-pressed="false" aria-label="Add to compare" title="Compare"><svg class="i"><use href="#i-compare"/></svg></button>
+        </div>
+      </form>
+
+      <div class="delivery-box">
+        <div><svg class="i"><use href="#i-truck"/></svg><div><strong data-eta>Delivery across Pakistan</strong><span class="muted" data-eta-detail>Choose your city to see the fee and arrival time.</span> <button class="city-pick" type="button" data-city-pick>Choose city</button>
+          <div class="hide" data-city-form style="margin-top:10px"><label class="sr" for="eta-city">Your city</label><select class="select" id="eta-city" data-city-select style="height:42px"><option value="">Select your city</option></select></div>
+        </div></div>
+        <div><svg class="i"><use href="#i-shield"/></svg><div><strong><%= p.warranty_text || (p.warranty_months + ' months official warranty') %></strong><span class="muted">Claims handled by us or the brand service centre.</span></div></div>
+        <div><svg class="i"><use href="#i-return"/></svg><div><strong>7 day returns</strong><span class="muted">Free pickup if it is faulty or not what you ordered. <a class="link" href="/pages/returns">Details</a></span></div></div>
+        <% if (p.category_slug === 'smartphones') { %><div><svg class="i"><use href="#i-check"/></svg><div><strong>PTA approved</strong><span class="muted">Works on every Pakistani network from day one.</span></div></div><% } %>
+      </div>
+
+      <% if (p.highlights.length) { %>
+        <ul class="highlights">
+          <% for (const h of p.highlights) { %><li><svg class="i"><use href="#i-check"/></svg><%= h %></li><% } %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="pdp-sections">
+    <nav class="pdp-nav" aria-label="On this page">
+      <a href="#overview">Overview</a><a href="#specs">Specifications</a><a href="#reviews">Reviews (<%= totalReviews %>)</a><% if (related.length) { %><a href="#related">Similar products</a><% } %>
+    </nav>
+
+    <section class="pdp-block" id="overview" aria-labelledby="ov-h">
+      <h2 id="ov-h">Overview</h2>
+      <div class="prose"><% for (const para of p.description.split(/\n\n+/)) { %><p><%= para %></p><% } %></div>
+    </section>
+
+    <section class="pdp-block" id="specs" aria-labelledby="sp-h">
+      <h2 id="sp-h">Specifications</h2>
+      <table class="spec-table">
+        <tbody>
+          <tr><th scope="row">Brand</th><td><%= p.brand %></td></tr>
+          <% for (const [k, v] of specEntries) { %><tr><th scope="row"><%= k %></th><td><%= v %></td></tr><% } %>
+          <tr><th scope="row">Warranty</th><td><%= p.warranty_months %> months</td></tr>
+          <tr><th scope="row">SKU</th><td class="num" data-sku><%= first.sku %></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="pdp-block" id="reviews" aria-labelledby="rv-h">
+      <h2 id="rv-h">Reviews</h2>
+      <div class="review-wrap">
+        <div>
+          <% if (totalReviews) { %>
+            <div class="rating-big"><strong class="num"><%= p.rating_avg.toFixed(1) %></strong><div><span class="stars stars-lg" aria-hidden="true"><% for (let s = 1; s <= 5; s++) { %><svg class="i <%= s <= Math.round(p.rating_avg) ? 'on' : 'off' %>"><use href="#i-star"/></svg><% } %></span><div class="small muted"><%= totalReviews %> review<%= totalReviews === 1 ? '' : 's' %></div></div></div>
+            <div class="dist">
+              <% for (const d of reviews.dist) { %>
+                <div class="dist-row"><span><%= d.star %> star</span><span class="dist-bar"><span style="width:<%= totalReviews ? Math.round(d.count / totalReviews * 100) : 0 %>%"></span></span><span class="num"><%= d.count %></span></div>
+              <% } %>
+            </div>
+          <% } else { %>
+            <p class="muted">No reviews yet. If you own this product, tell other buyers what you think.</p>
+          <% } %>
+
+          <div id="write-review" style="margin-top:28px">
+            <% if (!user) { %>
+              <a class="btn btn-line btn-block" href="/account/login?next=<%= encodeURIComponent('/p/' + p.slug + '#write-review') %>">Sign in to write a review</a>
+            <% } else if (canReview) { %>
+              <form method="post" action="/p/<%= p.slug %>/reviews" class="stack">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <h3 style="font-size:17px">Write a review</h3>
+                <% if (!purchased) { %><p class="xs muted" style="margin:0">Reviews from customers whose order was delivered get a verified buyer label.</p><% } %>
+                <fieldset style="border:0;padding:0;margin:0">
+                  <legend class="label">Your rating</legend>
+                  <div class="star-input">
+                    <% for (let s = 5; s >= 1; s--) { %><input type="radio" name="rating" id="rs<%= s %>" value="<%= s %>" <%= s === 5 ? 'required' : '' %>><label for="rs<%= s %>" title="<%= s %> star<%= s > 1 ? 's' : '' %>"><svg class="i"><use href="#i-star"/></svg><span class="sr"><%= s %> stars</span></label><% } %>
+                  </div>
+                </fieldset>
+                <label class="field"><span class="label">Title <span class="opt">(optional)</span></span><input class="input" name="title" maxlength="100"></label>
+                <label class="field"><span class="label">Your review</span><textarea class="textarea" name="body" required minlength="10" maxlength="2000" placeholder="What did you like or dislike? How long have you used it?"></textarea></label>
+                <button class="btn btn-ink btn-block" type="submit">Submit review</button>
+              </form>
+            <% } else { %>
+              <p class="small muted">Thanks, you have already reviewed this product.</p>
+            <% } %>
+          </div>
+        </div>
+        <div>
+          <% for (const r of reviews.rows) { %>
+            <article class="review">
+              <span class="stars" aria-label="<%= r.rating %> out of 5"><% for (let s = 1; s <= 5; s++) { %><svg class="i <%= s <= r.rating ? 'on' : 'off' %>"><use href="#i-star"/></svg><% } %></span>
+              <% if (r.title) { %><h3><%= r.title %></h3><% } %>
+              <p><%= r.body %></p>
+              <div class="who"><span><%= r.author %><%= r.city ? ', ' + r.city : '' %></span><span><%= dateFmt(r.created_at) %></span><% if (r.verified) { %><span class="pill pill-green"><svg class="i i-sm"><use href="#i-check"/></svg>Verified buyer</span><% } %></div>
+            </article>
+          <% } %>
+        </div>
+      </div>
+    </section>
+
+    <% if (related.length) { %>
+    <section id="related" aria-labelledby="rel-h" style="padding-top:28px">
+      <div class="section-head"><div><h2 id="rel-h">Similar products</h2></div><a class="more" href="/c/<%= p.category_slug %>">More in <%= p.category %><svg class="i i-sm"><use href="#i-right"/></svg></a></div>
+      <div class="grid"><% for (const rp of related) { %><%- include('../partials/card', { p: rp }) %><% } %></div>
+    </section>
+    <% } %>
+
+    <section class="hide" data-recent-section aria-labelledby="recent-h" style="padding-top:40px">
+      <div class="section-head"><div><h2 id="recent-h">Recently viewed</h2></div></div>
+      <div class="scroller" data-recent data-exclude="<%= p.id %>"></div>
+    </section>
+  </div>
+</div>
+
+<div class="sticky-buy" data-sticky-buy aria-hidden="true">
+  <div class="grow"><div class="nm"><%= p.name %></div><div class="pr price" data-sticky-price><%= money(first.price) %></div></div>
+  <button class="btn btn-primary" type="button" data-sticky-add>Add to cart</button>
+</div>
+
+<div class="lightbox" data-lightbox role="dialog" aria-modal="true" aria-label="Product photos">
+  <button class="icon-btn lb-close" type="button" data-lb-close aria-label="Close"><svg class="i"><use href="#i-close"/></svg></button>
+  <button class="icon-btn lb-prev" type="button" data-lb-step="-1" aria-label="Previous photo"><svg class="i"><use href="#i-left"/></svg></button>
+  <img src="" alt="" data-lb-img>
+  <button class="icon-btn lb-next" type="button" data-lb-step="1" aria-label="Next photo"><svg class="i"><use href="#i-right"/></svg></button>
+</div>
+
+<script type="application/json" id="product-data"><%- JSON.stringify(productJson).replace(/</g, '\\u003c') %></script>
+<%- include('../partials/bottom', locals) %>

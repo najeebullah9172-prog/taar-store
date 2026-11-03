@@ -1,0 +1,11 @@
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <header class="page-head"><h1><%= page.title %></h1><p><%= page.summary %></p></header>
+  <div class="info">
+    <nav aria-label="Help pages"><ul><% for (const pg of pageList) { %><li><a href="/pages/<%= pg.slug %>" <%= pg.slug === slug ? 'aria-current=page' : '' %>><%= pg.title %></a></li><% } %><li><a href="/contact">Contact us</a></li></ul></nav>
+    <article class="card prose">
+      <% for (const s of page.sections) { %><h2><%= s.h %></h2><% for (const para of s.p) { %><p><%= para %></p><% } %><% } %>
+    </article>
+  </div>
+</div>
+<%- include('../partials/bottom', locals) %>

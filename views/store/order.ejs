@@ -1,0 +1,137 @@
+<%
+  const o = order;
+  const stages = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
+  const stageLabel = { pending: 'Placed', confirmed: 'Confirmed', processing: 'Packed', shipped: 'On the way', delivered: 'Delivered' };
+  const idx = stages.indexOf(o.status);
+  const pubEvents = o.events.filter(e => e.public).reverse();
+  const payLabel = { cod: 'Cash on delivery', bank_transfer: 'Bank transfer', card: 'Card or wallet' }[o.payment_method];
+  const payState = { unpaid: ['Not paid yet', 'pill'], pending: ['Waiting for payment', 'pill-amber'], awaiting_verification: ['Checking your payment', 'pill-amber'], paid: ['Paid', 'pill-green'], failed: ['Payment failed', 'pill-red'], refunded: ['Refunded', 'pill-blue'], partially_refunded: ['Partly refunded', 'pill-blue'] }[o.payment_status];
+  const openReturn = o.returns.find(r => ['requested', 'approved', 'received'].includes(r.status));
+%>
+<%- include('../partials/top', locals) %>
+<div class="wrap" style="padding-top:24px">
+  <% if (payMessage === 'failed') { %>
+    <div class="alert alert-error" role="alert" style="margin-bottom:16px"><svg class="i"><use href="#i-alert"/></svg><div>Your payment did not go through and you have not been charged. Try again below, or contact us to switch to cash on delivery.</div></div>
+  <% } else if (payMessage === 'cancelled') { %>
+    <div class="alert alert-warn" role="status" style="margin-bottom:16px"><svg class="i"><use href="#i-info"/></svg><div>You left the payment page. Your order is saved; pay below when you are ready.</div></div>
+  <% } %>
+
+  <section class="order-hero">
+    <div>
+      <% if (placed && o.status !== 'cancelled') { %>
+        <span class="pill pill-green" style="margin-bottom:12px"><svg class="i i-sm"><use href="#i-check"/></svg>Order placed</span>
+        <h1>Thank you, <%= o.full_name.split(' ')[0] %>. Your order is in.</h1>
+        <p class="muted" style="margin:10px 0 0">We have emailed a receipt to <strong><%= o.email %></strong>. Keep your order number handy: <strong class="num"><%= o.number %></strong>.</p>
+      <% } else { %>
+        <div class="small muted">Order <span class="num"><%= o.number %></span>, placed <%= dateFmt(o.created_at) %></div>
+        <h1 style="margin-top:6px"><%= o.status === 'cancelled' ? 'This order was cancelled' : o.status === 'returned' ? 'This order was returned' : stageLabel[o.status] === 'Delivered' ? 'Delivered' : 'Order ' + stageLabel[o.status].toLowerCase() %></h1>
+      <% } %>
+    </div>
+    <div class="row no-print" style="flex-wrap:wrap">
+      <a class="btn btn-line btn-sm" href="/order/<%= o.number %>/invoice?t=<%= token %>" target="_blank"><svg class="i i-sm"><use href="#i-print"/></svg>Invoice</a>
+      <% if (canCancel) { %>
+        <form method="post" action="/order/<%= o.number %>/cancel" data-confirm="Cancel order <%= o.number %>? This cannot be undone.">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="t" value="<%= token %>">
+          <button class="btn btn-danger btn-sm" type="submit">Cancel order</button>
+        </form>
+      <% } %>
+    </div>
+  </section>
+
+  <div class="order-grid">
+    <div class="stack">
+      <% if (!['cancelled', 'returned'].includes(o.status)) { %>
+      <section class="card" aria-labelledby="prog-h">
+        <h2 id="prog-h" class="sr">Progress</h2>
+        <div class="progress-wire">
+          <span class="fill" style="width:<%= Math.max(0, idx) * 20 %>%"></span>
+          <% stages.forEach((s, i) => { %><div class="<%= i <= idx ? 'done' : '' %>"><span class="node"></span><%= stageLabel[s] %></div><% }) %>
+        </div>
+        <% if (o.tracking_number) { %>
+          <div class="alert alert-info" style="margin-top:20px"><svg class="i"><use href="#i-truck"/></svg><div>Shipped with <strong><%= o.courier %></strong>. Tracking number <strong class="num"><%= o.tracking_number %></strong>. Use it on the courier's website for live updates.</div></div>
+        <% } %>
+      </section>
+      <% } %>
+
+      <% if (o.payment_method === 'bank_transfer' && ['unpaid', 'failed'].includes(o.payment_status) && o.status !== 'cancelled') { %>
+      <section class="card" aria-labelledby="bank-h">
+        <h2 id="bank-h" style="font-size:19px;margin-bottom:6px">Complete your bank transfer</h2>
+        <p class="muted small">Transfer <strong class="num"><%= money(o.total) %></strong> and use <strong class="num"><%= o.number %></strong> as the payment reference. We dispatch as soon as it arrives.</p>
+        <% for (const a of (bank.accounts || [])) { %>
+          <div class="bank-box"><dl class="kv"><dt>Bank</dt><dd><%= a.bank %></dd><dt>Account title</dt><dd><%= a.title %></dd><dt>Account number</dt><dd class="num"><%= a.account %></dd><% if (a.iban) { %><dt>IBAN</dt><dd class="num"><%= a.iban %></dd><% } %></dl></div>
+        <% } %>
+        <form method="post" action="/order/<%= o.number %>/reference" class="row" style="margin-top:16px;flex-wrap:wrap;align-items:flex-end">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="t" value="<%= token %>">
+          <label class="field grow" style="min-width:220px"><span class="label">Transaction ID from your banking app</span><input class="input" name="reference" required minlength="4" maxlength="60"></label>
+          <button class="btn btn-ink" type="submit">Submit reference</button>
+        </form>
+      </section>
+      <% } %>
+
+      <% if (o.payment_method === 'card' && ['pending', 'failed', 'unpaid'].includes(o.payment_status) && o.status !== 'cancelled') { %>
+      <section class="card">
+        <h2 style="font-size:19px;margin-bottom:6px">Payment needed</h2>
+        <p class="muted small">We hold your items for 24 hours while you complete payment.</p>
+        <form method="post" action="/order/<%= o.number %>/pay"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="t" value="<%= token %>">
+          <button class="btn btn-primary" type="submit"><svg class="i i-sm"><use href="#i-card"/></svg>Pay <%= money(o.total) %> now</button></form>
+      </section>
+      <% } %>
+
+      <section class="card" aria-labelledby="items-h">
+        <h2 id="items-h" style="font-size:19px;margin-bottom:6px">Items</h2>
+        <% for (const it of o.items) { %>
+          <div class="line">
+            <div class="line-img"><img src="<%= it.image %>" alt=""></div>
+            <div><div class="line-name"><%= it.name %></div><% if (it.variant_label) { %><div class="line-var"><%= it.variant_label %></div><% } %><div class="line-var">Qty <%= it.qty %></div></div>
+            <div class="line-price price"><%= money(it.price * it.qty) %></div>
+          </div>
+        <% } %>
+        <div class="totals" style="border-top:1px solid var(--line);padding-top:16px">
+          <div><span>Subtotal</span><span class="num"><%= money(o.subtotal) %></span></div>
+          <% if (o.discount) { %><div class="disc"><span>Discount<%= o.coupon_code ? ' (' + o.coupon_code + ')' : '' %></span><span class="num">&minus;<%= money(o.discount) %></span></div><% } %>
+          <div><span>Delivery (<%= o.shipping_method %>)</span><span class="num"><%= o.shipping ? money(o.shipping) : 'Free' %></span></div>
+          <% if (o.payment_fee) { %><div><span>Cash handling fee</span><span class="num"><%= money(o.payment_fee) %></span></div><% } %>
+          <div class="grand"><span>Total</span><span class="num"><%= money(o.total) %></span></div>
+        </div>
+      </section>
+
+      <% if (o.status === 'delivered' && user && user.id === o.user_id && !openReturn) { %>
+      <section class="card" id="return" aria-labelledby="ret-h">
+        <h2 id="ret-h" style="font-size:19px;margin-bottom:6px">Return an item</h2>
+        <p class="small muted">Within 7 days of delivery. We arrange the pickup.</p>
+        <form method="post" action="/account/orders/<%= o.number %>/return" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <fieldset style="border:0;padding:0;margin:0" class="stack"><legend class="label">Items to return</legend>
+            <% for (const it of o.items) { %><label class="check"><input type="checkbox" name="items" value="<%= it.id %>"><%= it.name %><%= it.variant_label ? ' (' + it.variant_label + ')' : '' %></label><% } %>
+          </fieldset>
+          <label class="field"><span class="label">Reason</span>
+            <select class="select" name="reason" required><option value="">Choose a reason</option><option value="defective">It is faulty or damaged</option><option value="wrong_item">I received the wrong item</option><option value="not_as_described">It is not as described</option><option value="changed_mind">I changed my mind (unopened)</option><option value="other">Something else</option></select></label>
+          <label class="field"><span class="label">Details <span class="opt">(optional)</span></span><textarea class="textarea" name="details" maxlength="1000" style="min-height:80px"></textarea></label>
+          <button class="btn btn-ink" type="submit">Request return</button>
+        </form>
+      </section>
+      <% } %>
+    </div>
+
+    <div class="stack">
+      <section class="card card-tight" aria-labelledby="pay-h">
+        <h2 id="pay-h" style="font-size:16px;margin-bottom:12px">Payment</h2>
+        <div class="row-between"><span><%= payLabel %></span><span class="pill <%= payState[1] %>"><%= payState[0] %></span></div>
+        <% if (o.payment_method === 'cod' && o.payment_status !== 'paid' && o.status !== 'cancelled') { %><p class="small muted" style="margin:10px 0 0">Keep <strong class="num"><%= money(o.total) %></strong> ready in cash for the rider.</p><% } %>
+      </section>
+      <section class="card card-tight" aria-labelledby="ship-h">
+        <h2 id="ship-h" style="font-size:16px;margin-bottom:12px">Delivering to</h2>
+        <address style="font-style:normal;font-size:14.5px;line-height:1.6"><strong><%= o.full_name %></strong><br><%= o.line1 %><br><% if (o.line2) { %><%= o.line2 %><br><% } %><%= o.city %>, <%= o.province %> <%= o.postal_code || '' %><br><span class="num"><%= formatPhone(o.phone) %></span></address>
+      </section>
+      <section class="card card-tight" aria-labelledby="hist-h">
+        <h2 id="hist-h" style="font-size:16px;margin-bottom:16px">Updates</h2>
+        <ol class="timeline">
+          <% for (const e of pubEvents) { %><li><span class="node"></span><div class="what"><%= e.message %></div><div class="when"><%= dateTimeFmt(e.created_at) %></div></li><% } %>
+        </ol>
+        <% if (openReturn) { %><div class="alert alert-info small"><svg class="i"><use href="#i-return"/></svg><div>Return <%= openReturn.status %>. We will keep you updated by email.</div></div><% } %>
+      </section>
+      <p class="small muted">Questions about this order? <a class="link" href="/contact">Contact us</a> with your order number.</p>
+    </div>
+  </div>
+</div>
+<%- include('../partials/bottom', locals) %>

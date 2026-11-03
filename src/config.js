@@ -14,7 +14,7 @@ if (isProd && (!env.APP_SECRET || env.APP_SECRET.length < 32)) {
 module.exports = {
   isProd,
   port: Number(env.PORT || 3000),
-  baseUrl: (env.BASE_URL || `http://localhost:${env.PORT || 3000}`).replace(/\/$/, ''),
+  baseUrl: (env.BASE_URL || env.RENDER_EXTERNAL_URL || `http://localhost:${env.PORT || 3000}`).replace(/\/$/, ''),
   dbPath: path.resolve(env.DB_PATH || path.join(__dirname, '..', 'data', 'taar.db')),
   uploadDir: path.resolve(env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads')),
   secret: env.APP_SECRET || 'dev-only-secret-change-me-before-going-live-0000',

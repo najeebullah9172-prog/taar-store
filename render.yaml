@@ -1,0 +1,26 @@
+# Render Blueprint: one click deployment of the Taar store.
+# Free instances have no permanent storage, so the store reloads the sample
+# catalogue every time it starts and orders placed are cleared when it sleeps.
+# For a real shop, switch the plan to a paid one and attach a disk (see README).
+services:
+  - type: web
+    name: taar-store
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci
+    startCommand: node --no-warnings scripts/seed.js && node --no-warnings server.js
+    healthCheckPath: /robots.txt
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: APP_SECRET
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: PAYMENT_SANDBOX
+        value: "1"

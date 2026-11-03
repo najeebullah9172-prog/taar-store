@@ -25,7 +25,18 @@ Sign in at `/account/login` with:
 | Support | support@taar.pk | Support!2026 | Orders, customers, returns, reviews |
 | Customer | ayesha@example.com | Customer!2026 | A shopper with a saved address and past orders |
 
-Change these passwords (or set `ADMIN_PASSWORD` before seeding) before the store is public.
+These demo passwords only work when you run the store on your own computer. On a live server (`NODE_ENV=production`) the admin password comes from `ADMIN_PASSWORD` and the manager and support accounts get random passwords, so nobody can sign in with the ones listed here.
+
+## Publish it on Render
+
+This gives the store a normal public link (for example `https://taar-store.onrender.com`) that anyone can open and order from without signing in.
+
+1. Sign in at [render.com](https://render.com) with your GitHub account.
+2. Open `https://render.com/deploy?repo=https://github.com/najeebullah9172-prog/taar-store`, or choose **New**, then **Blueprint**, and pick this repository. Render reads `render.yaml`.
+3. When asked for `ADMIN_PASSWORD`, enter the password you want for `admin@taar.pk`, then click **Apply** (or **Deploy Blueprint**).
+4. The first build takes a few minutes. Your link appears at the top of the service page.
+
+On Render's free plan the site sleeps after 15 minutes without visitors and takes about a minute to wake up. Free instances have no permanent storage, so the sample catalogue is reloaded on every start and orders placed are cleared when the site sleeps or redeploys. For a real shop, move the service to a paid plan, attach a disk mounted at `/data`, and set `DB_PATH=/data/taar.db` and `UPLOAD_DIR=/data/uploads`.
 
 ## Preview on GitHub Codespaces
 

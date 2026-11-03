@@ -1,0 +1,27 @@
+<% locals.title = 'Inventory'; locals.sub = 'Edit stock and prices for many variants at once'; %>
+<%- include('partials/top', locals) %>
+<form class="filters-row" method="get">
+  <input class="input" name="q" placeholder="Product name or SKU" value="<%= q %>" style="min-width:260px">
+  <select class="select" name="filter"><option value="">All variants</option><option value="low" <%= filter === 'low' ? 'selected' : '' %>>5 or fewer in stock</option></select>
+  <button class="btn btn-ink btn-sm" type="submit">Filter</button>
+</form>
+<form method="post" action="/admin/inventory">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <% if (q || filter) { %><input type="hidden" name="back[q]" value="<%= q %>"><input type="hidden" name="back[filter]" value="<%= filter %>"><% } %>
+  <section class="panel">
+    <div class="t-wrap"><table class="t">
+      <thead><tr><th>Product</th><th>Variant</th><th>SKU</th><th>Status</th><th class="r">Price (Rs)</th><th class="r">Stock</th></tr></thead>
+      <tbody>
+        <% for (const v of rows) { %>
+          <tr><td><a href="/admin/products/<%= v.product_id %>"><%= v.name %></a></td><td class="small"><%= Object.values(v.options).join(' / ') || 'Default' %></td><td class="small"><%= v.sku %></td>
+            <td><%- include('partials/opill', { s: v.status }) %></td>
+            <td class="r"><input class="input" type="number" min="0" name="price[<%= v.id %>]" value="<%= v.price %>" style="width:130px;margin-left:auto" aria-label="Price for <%= v.sku %>"></td>
+            <td class="r"><input class="input" type="number" min="0" name="stock[<%= v.id %>]" value="<%= v.stock %>" style="width:90px;margin-left:auto;<%= v.stock === 0 ? 'border-color:var(--red)' : v.stock <= 5 ? 'border-color:var(--amber)' : '' %>" aria-label="Stock for <%= v.sku %>"></td></tr>
+        <% } %>
+        <% if (!rows.length) { %><tr class="empty-row"><td colspan="6">No variants match.</td></tr><% } %>
+      </tbody>
+    </table></div>
+  </section>
+  <div class="sticky-save"><button class="btn btn-primary" type="submit">Save changes</button></div>
+</form>
+<%- include('partials/bottom', locals) %>

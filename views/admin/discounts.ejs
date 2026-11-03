@@ -1,0 +1,43 @@
+<% locals.title = 'Discounts'; locals.sub = 'Codes customers enter in the cart'; const e = edit || {}; %>
+<%- include('partials/top', locals) %>
+<div class="cols cols-main">
+  <section class="panel">
+    <div class="t-wrap"><table class="t">
+      <thead><tr><th>Code</th><th>Discount</th><th>Rules</th><th class="r">Used</th><th class="r">Given</th><th>Status</th><th></th></tr></thead>
+      <tbody><% for (const c of list) { const expired = c.ends_at && c.ends_at.slice(0, 10) < today; %>
+        <tr><td><strong><%= c.code %></strong><div class="xs muted"><%= c.description %></div></td>
+          <td><%= c.type === 'percent' ? c.value + '%' + (c.max_discount ? ', max ' + money(c.max_discount) : '') : c.type === 'fixed' ? money(c.value) : 'Free delivery' %></td>
+          <td class="small"><%= c.min_subtotal ? 'Over ' + money(c.min_subtotal) : 'Any order' %><%= c.usage_limit ? ', ' + c.usage_limit + ' uses' : '' %><%= c.per_customer_limit ? ', ' + c.per_customer_limit + ' per customer' : '' %><%= c.ends_at ? ', until ' + dateFmt(c.ends_at + ' 00:00:00') : '' %></td>
+          <td class="r"><%= c.used_count %></td><td class="r"><%= money(c.given) %></td>
+          <td><% if (!c.active) { %><span class="pill">Off</span><% } else if (expired) { %><span class="pill pill-red">Expired</span><% } else { %><span class="pill pill-green">Live</span><% } %></td>
+          <td class="r"><div class="row" style="justify-content:flex-end"><a class="btn btn-ghost btn-sm" href="/admin/discounts?edit=<%= c.id %>">Edit</a>
+            <form method="post" action="/admin/discounts/<%= c.id %>/toggle"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost btn-sm" type="submit"><%= c.active ? 'Turn off' : 'Turn on' %></button></form></div></td></tr>
+      <% } %></tbody>
+    </table></div>
+  </section>
+  <form class="panel stack" method="post" action="/admin/discounts">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>"><% if (e.id) { %><input type="hidden" name="id" value="<%= e.id %>"><% } %>
+    <h2 style="font-size:16.5px"><%= e.id ? 'Edit ' + e.code : 'Create a code' %></h2>
+    <label class="field"><span class="label">Code</span><input class="input" name="code" required value="<%= e.code || '' %>" style="text-transform:uppercase" placeholder="EID2026"></label>
+    <label class="field"><span class="label">Description</span><input class="input" name="description" value="<%= e.description || '' %>" placeholder="Shown to the customer when applied"></label>
+    <div class="grid-2">
+      <label class="field"><span class="label">Type</span><select class="select" name="type"><option value="percent" <%= e.type === 'percent' ? 'selected' : '' %>>Percentage</option><option value="fixed" <%= e.type === 'fixed' ? 'selected' : '' %>>Fixed amount</option><option value="free_shipping" <%= e.type === 'free_shipping' ? 'selected' : '' %>>Free delivery</option></select></label>
+      <label class="field"><span class="label">Value</span><input class="input" type="number" name="value" min="0" value="<%= e.value ?? '' %>" placeholder="10 or 2000"></label>
+    </div>
+    <div class="grid-2">
+      <label class="field"><span class="label">Minimum order (Rs)</span><input class="input" type="number" name="min_subtotal" min="0" value="<%= e.min_subtotal ?? 0 %>"></label>
+      <label class="field"><span class="label">Maximum discount (Rs)</span><input class="input" type="number" name="max_discount" min="0" value="<%= e.max_discount ?? '' %>" placeholder="No cap"></label>
+    </div>
+    <div class="grid-2">
+      <label class="field"><span class="label">Total uses</span><input class="input" type="number" name="usage_limit" min="1" value="<%= e.usage_limit ?? '' %>" placeholder="Unlimited"></label>
+      <label class="field"><span class="label">Uses per customer</span><input class="input" type="number" name="per_customer_limit" min="1" value="<%= e.per_customer_limit ?? '' %>" placeholder="Unlimited"></label>
+    </div>
+    <div class="grid-2">
+      <label class="field"><span class="label">Starts</span><input class="input" type="date" name="starts_at" value="<%= (e.starts_at || '').slice(0, 10) %>"></label>
+      <label class="field"><span class="label">Ends</span><input class="input" type="date" name="ends_at" value="<%= (e.ends_at || '').slice(0, 10) %>"></label>
+    </div>
+    <label class="check"><input type="checkbox" name="active" <%= e.id ? (e.active ? 'checked' : '') : 'checked' %>>Active</label>
+    <div class="row"><button class="btn btn-primary btn-sm" type="submit">Save code</button><% if (e.id) { %><a class="btn btn-ghost btn-sm" href="/admin/discounts">Cancel</a><% } %></div>
+  </form>
+</div>
+<%- include('partials/bottom', locals) %>

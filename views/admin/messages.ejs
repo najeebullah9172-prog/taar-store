@@ -1,0 +1,19 @@
+<% locals.title = 'Messages'; locals.sub = 'From the contact form'; %>
+<%- include('partials/top', locals) %>
+<% if (!list.length) { %><section class="panel"><p class="muted" style="margin:0">No messages yet.</p></section><% } %>
+<% for (const m of list) { %>
+  <section class="panel" style="<%= m.handled ? 'opacity:.6' : '' %>">
+    <div class="panel-head"><div><strong><%= m.name %></strong> <a class="link small" href="mailto:<%= m.email %>"><%= m.email %></a><%= m.phone ? ', ' + m.phone : '' %><div class="xs muted"><%= dateTimeFmt(m.created_at) %><%= m.subject ? ', about ' + m.subject : '' %></div></div>
+      <form method="post" action="/admin/messages/<%= m.id %>/handled"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-line btn-sm" type="submit"><%= m.handled ? 'Mark as open' : 'Mark as handled' %></button></form></div>
+    <p style="margin:0;white-space:pre-line"><%= m.body %></p>
+  </section>
+<% } %>
+<% if (emails.length) { %>
+  <section class="panel" style="margin-top:24px">
+    <div class="panel-head"><h2>Emails sent by the store</h2><span class="xs muted">Logged here always. Delivered only when SMTP_URL is set.</span></div>
+    <div class="t-wrap"><table class="t"><thead><tr><th>When</th><th>To</th><th>Subject</th><th>Status</th></tr></thead><tbody>
+      <% for (const e of emails) { %><tr><td class="small"><%= dateTimeFmt(e.created_at) %></td><td class="small"><%= e.to_email %></td><td><details><summary style="cursor:pointer"><%= e.subject %></summary><pre class="small" style="white-space:pre-wrap;font-family:inherit"><%= e.body %></pre></details></td><td><span class="pill"><%= e.status %></span></td></tr><% } %>
+    </tbody></table></div>
+  </section>
+<% } %>
+<%- include('partials/bottom', locals) %>

@@ -1,0 +1,87 @@
+<%
+  locals.title = 'Overview';
+  locals.sub = 'Last ' + days + ' days, compared with the ' + days + ' days before';
+  locals.actions = `<nav class="seg" aria-label="Date range">${[7, 30, 90].map(d => `<a href="/admin?days=${d}" ${d === days ? 'aria-current="page"' : ''}>${d} days</a>`).join('')}</nav>`;
+  const max = Math.max(1, ...series.map(s => s.revenue));
+  // nice axis maximum
+  const pow = Math.pow(10, Math.floor(Math.log10(max)));
+  const niceMax = Math.ceil(max / pow) * pow;
+  const W = 900, H = 260, L = 56, B = 26, T = 10;
+  const bw = (W - L) / series.length;
+  const ticks = [0, .25, .5, .75, 1].map(f => f * niceMax);
+  const short = (n) => n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'k' : String(n);
+  const delta = (v) => v == null ? '<span class="d">No earlier data</span>' : `<span class="d ${v >= 0 ? 'up' : 'down'}">${v >= 0 ? 'Up' : 'Down'} ${Math.abs(v)}% on the previous period</span>`;
+  const statusLabel = { pending: 'Placed', confirmed: 'Confirmed', processing: 'Packing', shipped: 'Shipped', delivered: 'Delivered', cancelled: 'Cancelled', returned: 'Returned' };
+  const payLabel = { cod: 'Cash on delivery', bank_transfer: 'Bank transfer', card: 'Card or wallet' };
+%>
+<%- include('partials/top', locals) %>
+<div class="todo">
+  <a href="/admin/orders?status=pending" class="<%= todo.pending ? 'hot' : '' %>">New orders to confirm<strong><%= todo.pending %></strong></a>
+  <a href="/admin/orders?payment=awaiting_verification" class="<%= todo.verify ? 'hot' : '' %>">Bank transfers to verify<strong><%= todo.verify %></strong></a>
+  <a href="/admin/orders?status=processing">Orders to ship<strong><%= todo.toShip %></strong></a>
+  <a href="/admin/returns" class="<%= todo.returns ? 'hot' : '' %>">Return requests<strong><%= todo.returns %></strong></a>
+  <a href="/admin/reviews" class="<%= todo.reviews ? 'hot' : '' %>">Reviews to check<strong><%= todo.reviews %></strong></a>
+</div>
+<div class="kpis">
+  <div class="kpi"><div class="k">Revenue</div><div class="v"><%= money(cur.revenue) %></div><%- delta(change.revenue) %></div>
+  <div class="kpi"><div class="k">Orders</div><div class="v"><%= num(cur.orders) %></div><%- delta(change.orders) %></div>
+  <div class="kpi"><div class="k">Average order</div><div class="v"><%= money(cur.aov) %></div><span class="d">Cancelled orders excluded</span></div>
+  <div class="kpi"><div class="k">Customers</div><div class="v"><%= num(customers) %></div><span class="d">Unique emails that ordered</span></div>
+</div>
+<div class="cols cols-main">
+  <section class="panel">
+    <div class="panel-head"><h2>Revenue per day</h2><span class="xs muted">Rupees, Pakistan time</span></div>
+    <svg class="chart" viewBox="0 0 <%= W %> <%= H %>" role="img" aria-label="Bar chart of daily revenue for the last <%= days %> days" data-chart>
+      <g class="grid"><% for (const t of ticks) { const y = T + (H - B - T) * (1 - t / niceMax); %><line x1="<%= L %>" x2="<%= W %>" y1="<%= y %>" y2="<%= y %>"/><text x="<%= L - 8 %>" y="<%= y + 4 %>" text-anchor="end"><%= short(t) %></text><% } %></g>
+      <% series.forEach((s, i) => { const h = (H - B - T) * s.revenue / niceMax; const x = L + i * bw + Math.max(1, bw * .18); const w = Math.max(2, bw * .64); const y = H - B - h; const r = Math.min(4, w / 2, h); %>
+        <% if (h > 0) { %><path class="bar" d="M<%= x %>,<%= H - B %> V<%= y + r %> Q<%= x %>,<%= y %> <%= x + r %>,<%= y %> H<%= x + w - r %> Q<%= x + w %>,<%= y %> <%= x + w %>,<%= y + r %> V<%= H - B %> Z" data-tip="<%= dateFmt(s.d + 'T12:00:00Z') %>: <%= money(s.revenue) %>, <%= s.orders %> order<%= s.orders === 1 ? '' : 's' %>"/><% } %>
+        <rect x="<%= L + i * bw %>" y="<%= T %>" width="<%= bw %>" height="<%= H - B - T %>" fill="transparent" data-tip="<%= dateFmt(s.d + 'T12:00:00Z') %>: <%= money(s.revenue) %>, <%= s.orders %> order<%= s.orders === 1 ? '' : 's' %>"/>
+        <% if (i % Math.ceil(series.length / 8) === 0) { %><text x="<%= L + i * bw + bw / 2 %>" y="<%= H - 8 %>" text-anchor="middle"><%= dateFmt(s.d + 'T12:00:00Z', { day: 'numeric', month: 'short' }) %></text><% } %>
+      <% }) %>
+    </svg>
+    <details style="margin-top:8px"><summary class="xs muted" style="cursor:pointer">Show as a table</summary>
+      <div class="t-wrap"><table class="t"><thead><tr><th>Day</th><th class="r">Orders</th><th class="r">Revenue</th></tr></thead><tbody><% for (const s of series.slice().reverse()) { %><tr><td><%= dateFmt(s.d + 'T12:00:00Z') %></td><td class="r"><%= s.orders %></td><td class="r"><%= money(s.revenue) %></td></tr><% } %></tbody></table></div></details>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>Orders by status</h2></div>
+    <table class="t"><tbody><% for (const s of byStatus) { %><tr><td><a href="/admin/orders?status=<%= s.status %>"><%= statusLabel[s.status] %></a></td><td class="r"><%= s.n %></td></tr><% } %>
+      <% if (!byStatus.length) { %><tr class="empty-row"><td>No orders in this period</td></tr><% } %></tbody></table>
+    <div class="panel-head" style="margin-top:20px"><h2>Payment methods</h2></div>
+    <div class="hbars">
+      <% const pmMax = Math.max(1, ...byPayment.map(p => p.revenue)); for (const p of byPayment) { %>
+        <div class="hbar"><span class="nm"><%= payLabel[p.m] %> <span class="muted">(<%= p.n %>)</span></span><span><%= money(p.revenue) %></span><span class="track"><span class="fill" style="width:<%= (p.revenue / pmMax * 100).toFixed(1) %>%"></span></span></div>
+      <% } %>
+    </div>
+  </section>
+</div>
+<div class="cols cols-3" style="margin-top:16px">
+  <section class="panel">
+    <div class="panel-head"><h2>Top products</h2></div>
+    <div class="hbars"><% const tpMax = Math.max(1, ...topProducts.map(p => p.revenue)); for (const p of topProducts) { %>
+      <div class="hbar"><span class="nm" title="<%= p.name %>"><%= p.name %></span><span><%= money(p.revenue) %></span><span class="track"><span class="fill" style="width:<%= (p.revenue / tpMax * 100).toFixed(1) %>%"></span></span></div><% } %></div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>Top categories</h2></div>
+    <div class="hbars"><% const tcMax = Math.max(1, ...topCategories.map(p => p.revenue)); for (const p of topCategories) { %>
+      <div class="hbar"><span class="nm"><%= p.name %></span><span><%= money(p.revenue) %></span><span class="track"><span class="fill" style="width:<%= (p.revenue / tcMax * 100).toFixed(1) %>%"></span></span></div><% } %></div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>Top cities</h2></div>
+    <div class="hbars"><% const ctMax = Math.max(1, ...topCities.map(p => p.revenue)); for (const p of topCities) { %>
+      <div class="hbar"><span class="nm"><%= p.city %> <span class="muted">(<%= p.n %>)</span></span><span><%= money(p.revenue) %></span><span class="track"><span class="fill" style="width:<%= (p.revenue / ctMax * 100).toFixed(1) %>%"></span></span></div><% } %></div>
+  </section>
+</div>
+<div class="cols cols-main" style="margin-top:16px">
+  <section class="panel">
+    <div class="panel-head"><h2>Latest orders</h2><a class="link small" href="/admin/orders">All orders</a></div>
+    <div class="t-wrap"><table class="t"><thead><tr><th>Order</th><th>Customer</th><th>Status</th><th>Payment</th><th class="r">Total</th></tr></thead><tbody>
+      <% for (const o of recent) { %><tr><td><a class="rowlink" href="/admin/orders/<%= o.id %>"><%= o.number %></a><div class="xs muted"><%= dateTimeFmt(o.created_at) %></div></td><td><%= o.full_name %><div class="xs muted"><%= o.city %></div></td><td><%- include('partials/opill', { s: o.status }) %></td><td><%- include('partials/opill', { s: o.payment_status }) %></td><td class="r"><%= money(o.total) %></td></tr><% } %>
+    </tbody></table></div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>Low stock</h2><a class="link small" href="/admin/inventory?filter=low">Inventory</a></div>
+    <table class="t"><tbody><% for (const v of lowStock) { %><tr><td><a href="/admin/products/<%= v.product_id %>"><%= v.name %></a><div class="xs muted"><%= Object.values(v.options).join(' / ') || v.sku %></div></td><td class="r"><span class="pill <%= v.stock === 0 ? 'pill-red' : 'pill-amber' %>"><%= v.stock === 0 ? 'Out' : v.stock + ' left' %></span></td></tr><% } %>
+      <% if (!lowStock.length) { %><tr class="empty-row"><td>Everything is well stocked</td></tr><% } %></tbody></table>
+  </section>
+</div>
+<%- include('partials/bottom', locals) %>

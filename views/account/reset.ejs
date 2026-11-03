@@ -1,0 +1,16 @@
+<%- include('../partials/top', locals) %>
+<div class="wrap"><div class="auth-wrap">
+  <div class="card stack">
+    <h1 style="font-size:24px">Choose a new password</h1>
+    <% if (!valid) { %>
+      <div class="alert alert-error"><svg class="i"><use href="#i-alert"/></svg><div>This link has expired or was already used. Ask for a new one.</div></div>
+      <a class="btn btn-ink btn-block" href="/account/forgot">Send a new link</a>
+    <% } else { %>
+      <% if (error) { %><div class="alert alert-error"><svg class="i"><use href="#i-alert"/></svg><div><%= error %></div></div><% } %>
+      <form method="post" class="stack"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label class="field"><span class="label">New password</span><input class="input" type="password" name="password" required minlength="8" autocomplete="new-password"><span class="hint">At least 8 characters with a letter and a number.</span></label>
+        <button class="btn btn-ink btn-block" type="submit">Save password</button></form>
+    <% } %>
+  </div>
+</div></div>
+<%- include('../partials/bottom', locals) %>

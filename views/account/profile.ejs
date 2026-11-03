@@ -1,0 +1,26 @@
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <header class="page-head"><h1>Profile and password</h1></header>
+  <div class="account">
+    <%- include('../partials/acct-nav') %>
+    <div class="stack">
+      <form class="card stack" method="post" action="/account/profile">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <h2 style="font-size:19px">Your details</h2>
+        <label class="field <%= errors.name ? 'has-error' : '' %>"><span class="label">Name</span><input class="input" name="name" required value="<%= u.name %>"><% if (errors.name) { %><div class="err"><%= errors.name %></div><% } %></label>
+        <label class="field"><span class="label">Email</span><input class="input" value="<%= u.email %>" disabled><span class="hint">Contact us to change the email on your account.</span></label>
+        <label class="field <%= errors.phone ? 'has-error' : '' %>"><span class="label">Mobile number</span><input class="input" name="phone" type="tel" value="<%= formatPhone(u.phone) || u.phone || '' %>"><% if (errors.phone) { %><div class="err"><%= errors.phone %></div><% } %></label>
+        <label class="check"><input type="checkbox" name="marketing" <%= u.marketing ? 'checked' : '' %>>Email me about new arrivals and price drops</label>
+        <div><button class="btn btn-ink" type="submit">Save details</button></div>
+      </form>
+      <form class="card stack" method="post" action="/account/password">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <h2 style="font-size:19px">Change password</h2>
+        <label class="field"><span class="label">Current password</span><input class="input" type="password" name="current" required autocomplete="current-password"></label>
+        <label class="field"><span class="label">New password</span><input class="input" type="password" name="password" required minlength="8" autocomplete="new-password"><span class="hint">Changing it signs you out on other devices.</span></label>
+        <div><button class="btn btn-ink" type="submit">Change password</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('../partials/bottom', locals) %>

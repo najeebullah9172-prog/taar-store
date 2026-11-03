@@ -1,0 +1,13 @@
+<%- include('../partials/top', locals) %>
+<div class="wrap" style="max-width:560px">
+  <header class="page-head"><h1>Track your order</h1><p>Enter the order number from your confirmation email, and the email or mobile number you ordered with.</p></header>
+  <form class="card stack" method="post" action="/track">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% if (errors._) { %><div class="alert alert-error" role="alert"><svg class="i"><use href="#i-alert"/></svg><div><%= errors._ %></div></div><% } %>
+    <label class="field <%= errors.number ? 'has-error' : '' %>"><span class="label">Order number</span><input class="input" name="number" placeholder="TR2611031234" required value="<%= values.number || '' %>"><% if (errors.number) { %><div class="err"><%= errors.number %></div><% } %></label>
+    <label class="field <%= errors.contact ? 'has-error' : '' %>"><span class="label">Email or mobile number</span><input class="input" name="contact" required value="<%= values.contact || '' %>"><% if (errors.contact) { %><div class="err"><%= errors.contact %></div><% } %></label>
+    <button class="btn btn-ink btn-block btn-lg" type="submit">Find my order</button>
+    <p class="small muted" style="margin:0">Have an account? <a class="link" href="/account/orders">See all your orders</a>.</p>
+  </form>
+</div>
+<%- include('../partials/bottom', locals) %>

@@ -1,0 +1,10 @@
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <header class="page-head"><h1>Wishlist</h1><% if (!user && products.length) { %><p><a class="link" href="/account/login?next=/wishlist">Sign in</a> to keep your wishlist on every device.</p><% } %></header>
+  <% if (!products.length) { %>
+    <div class="empty"><svg class="i"><use href="#i-heart"/></svg><h2>Nothing saved yet</h2><p>Tap the heart on any product to save it here and keep an eye on the price.</p><a class="btn btn-ink" href="/shop">Browse products</a></div>
+  <% } else { %>
+    <div class="grid"><% for (const p of products) { %><%- include('../partials/card', { p }) %><% } %></div>
+  <% } %>
+</div>
+<%- include('../partials/bottom', locals) %>

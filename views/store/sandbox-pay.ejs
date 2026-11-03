@@ -1,0 +1,20 @@
+<% locals.bare = true; %>
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <div class="sbx">
+    <div class="sbx-banner"><svg class="i"><use href="#i-info"/></svg><div><strong>Test payment gateway.</strong> No real money moves. Use card 4242 4242 4242 4242 for a successful payment or 4000 0000 0000 0002 to see a decline. Replace this with Safepay, JazzCash or another provider before going live.</div></div>
+    <div class="card">
+      <div class="row-between"><span class="logo-word" style="font-size:20px">Test Pay</span><span class="small muted">Taar order <%= p.number %></span></div>
+      <div style="margin:22px 0 6px" class="small muted">Amount</div>
+      <div style="font-size:32px;font-weight:700" class="num"><%= money(p.amount) %></div>
+      <form method="post" class="stack" style="margin-top:20px">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label class="field"><span class="label">Card number</span><input class="input num" name="card_number" inputmode="numeric" autocomplete="off" value="4242 4242 4242 4242" required></label>
+        <div class="grid-2"><label class="field"><span class="label">Expiry</span><input class="input" value="12 / 30" autocomplete="off"></label><label class="field"><span class="label">CVC</span><input class="input" value="123" autocomplete="off"></label></div>
+        <button class="btn btn-primary btn-block btn-lg" name="action" value="pay" type="submit">Pay <%= money(p.amount) %></button>
+        <button class="btn btn-ghost btn-block" name="action" value="cancel" type="submit" formnovalidate>Cancel and return to the store</button>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('../partials/bottom', locals) %>

@@ -1,0 +1,32 @@
+{
+  "name": "taar-store",
+  "version": "1.0.0",
+  "description": "Taar: a full stack electronics store for Pakistan (Express, SQLite, EJS).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "dev": "node --no-warnings --watch server.js",
+    "seed": "node --no-warnings scripts/seed.js",
+    "reset": "node --no-warnings scripts/seed.js --reset",
+    "test": "node --no-warnings --test tests/store.test.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@fontsource-variable/schibsted-grotesk": "^5.3.0",
+    "bcryptjs": "^3.0.3",
+    "compression": "^1.8.2",
+    "cookie-parser": "^1.4.7",
+    "ejs": "^7.0.2",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.3",
+    "helmet": "^8.3.0",
+    "multer": "^2.5.0",
+    "nodemailer": "^10.3.1",
+    "sharp": "^0.35.5",
+    "zod": "^4.6.7"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22.13"
+  }
+}

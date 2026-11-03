@@ -1,0 +1,89 @@
+<%
+  const m = locals.meta || {};
+  const pageTitle = m.title || (locals.title ? title + ' | Taar' : 'Taar | Electronics in Pakistan');
+  const pageDesc = m.description || 'Genuine phones, laptops and electronics with official warranty, cash on delivery and 7 day returns across Pakistan.';
+  const bare = locals.bare;
+%><!doctype html>
+<html lang="en-PK">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title><%= pageTitle %></title>
+  <meta name="description" content="<%= pageDesc %>">
+  <% if (m.canonical) { %><link rel="canonical" href="<%= m.canonical %>"><% } %>
+  <% if (m.noindex) { %><meta name="robots" content="noindex, follow"><% } %>
+  <meta property="og:site_name" content="Taar">
+  <meta property="og:title" content="<%= pageTitle %>">
+  <meta property="og:description" content="<%= pageDesc %>">
+  <meta property="og:type" content="<%= m.type || 'website' %>">
+  <% if (m.canonical) { %><meta property="og:url" content="<%= m.canonical %>"><% } %>
+  <% if (m.image) { %><meta property="og:image" content="<%= m.image %>"><% } %>
+  <meta name="theme-color" content="#ffffff">
+  <meta name="csrf-token" content="<%= csrfToken %>">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/store.css?v=<%= assetV %>">
+  <% if (locals.jsonLd) { for (const block of [].concat(jsonLd)) { %>
+  <script type="application/ld+json"><%- JSON.stringify(block).replace(/</g, '\\u003c') %></script>
+  <% } } %>
+</head>
+<body class="<%= locals.bodyClass || '' %>">
+<a class="skip" href="#main">Skip to content</a>
+<%- include('icons') %>
+<% if (!bare) { %>
+<% if (announcement) { %>
+<div class="announce">
+  <div class="wrap">
+    <span><%= announcement %></span>
+    <span class="announce-links"><a href="/track">Track an order</a><a href="/pages/returns">7 day returns</a><a href="/contact">Help</a></span>
+  </div>
+</div>
+<% } %>
+<header class="site-head">
+  <div class="wrap head-main">
+    <div class="mobile-top">
+      <button class="icon-btn menu-btn" type="button" data-open="menu" aria-label="Open menu"><svg class="i"><use href="#i-menu"/></svg></button>
+      <a class="logo" href="/" aria-label="Taar home">
+        <svg viewBox="0 0 44 24" aria-hidden="true"><path d="M2 12h24" stroke="#2346c8" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="33" cy="12" r="7" stroke="#2346c8" stroke-width="3" fill="none"/></svg>
+        <span class="logo-word">taar</span>
+      </a>
+    </div>
+    <form class="search" action="/search" method="get" role="search" data-search>
+      <svg class="i"><use href="#i-search"/></svg>
+      <label class="sr" for="q">Search products</label>
+      <input id="q" name="q" type="search" placeholder="Search phones, laptops, brands" autocomplete="off" value="<%= (query && typeof query.q === 'string') ? query.q : '' %>"
+             role="combobox" aria-expanded="false" aria-controls="suggest" aria-autocomplete="list" maxlength="80">
+      <button type="submit">Search</button>
+      <div class="suggest hide" id="suggest" role="listbox"></div>
+    </form>
+    <nav class="head-actions" aria-label="Account and cart">
+      <% if (user) { %>
+        <a class="icon-btn hide-sm" href="<%= user.role === 'customer' ? '/account' : '/admin' %>" aria-label="Your account"><svg class="i"><use href="#i-user"/></svg></a>
+      <% } else { %>
+        <a class="icon-btn hide-sm" href="/account/login" aria-label="Sign in"><svg class="i"><use href="#i-user"/></svg></a>
+      <% } %>
+      <a class="icon-btn" href="/wishlist" aria-label="Wishlist"><svg class="i"><use href="#i-heart"/></svg><span class="count-dot" data-wish-count data-n="<%= wishCount %>"><%= wishCount || '' %></span></a>
+      <a class="icon-btn" href="/cart" data-open="cart" aria-label="Cart"><svg class="i"><use href="#i-bag"/></svg><span class="count-dot" data-cart-count data-n="<%= cartCount %>"><%= cartCount || '' %></span></a>
+    </nav>
+  </div>
+  <nav class="head-nav" aria-label="Categories">
+    <div class="wrap">
+      <ul>
+        <% for (const c of navCategories) { %>
+          <li><a href="/c/<%= c.slug %>" <%= path === '/c/' + c.slug ? 'aria-current=page' : '' %>><%= c.name %></a></li>
+        <% } %>
+        <li><a href="/new" <%= path === '/new' ? 'aria-current=page' : '' %>>New</a></li>
+        <li><a href="/deals" class="nav-deal" <%= path === '/deals' ? 'aria-current=page' : '' %>>Deals</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+<% } %>
+<main id="main">
+<% if (flash) { %>
+  <div class="wrap" style="padding-top:16px">
+    <div class="alert alert-<%= flash.type === 'error' ? 'error' : 'success' %>" role="status">
+      <svg class="i"><use href="#i-<%= flash.type === 'error' ? 'alert' : 'check' %>"/></svg><div><%= flash.message %></div>
+    </div>
+  </div>
+<% } %>

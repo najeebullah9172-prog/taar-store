@@ -1,0 +1,1 @@
+<% const st = { pending: ['Placed', 'pill-amber'], confirmed: ['Confirmed', 'pill-blue'], processing: ['Packing', 'pill-blue'], shipped: ['Shipped', 'pill-blue'], delivered: ['Delivered', 'pill-green'], cancelled: ['Cancelled', 'pill-red'], returned: ['Returned', ''] }[s] || [s, '']; %><span class="pill <%= st[1] %>"><%= st[0] %></span>

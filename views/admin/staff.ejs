@@ -1,0 +1,28 @@
+<% locals.title = 'Staff'; locals.sub = 'Admins see everything. Managers run the catalogue and orders. Support handles orders, customers and returns.'; %>
+<%- include('partials/top', locals) %>
+<div class="cols cols-main">
+  <section class="panel">
+    <div class="t-wrap"><table class="t"><thead><tr><th>Name</th><th>Role</th><th>Last sign in</th><th></th></tr></thead><tbody>
+      <% for (const s of staff) { %><tr><td><strong><%= s.name %></strong> <% if (s.disabled) { %><span class="pill pill-red">Disabled</span><% } %><div class="xs muted"><%= s.email %></div></td><td><span class="pill"><%= s.role %></span></td><td class="small"><%= s.last_login_at ? dateTimeFmt(s.last_login_at) : 'Never' %></td>
+        <td class="r"><% if (s.id !== user.id) { %><form method="post" action="/admin/staff/<%= s.id %>" class="row" style="justify-content:flex-end"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <select class="select" name="action" style="height:36px;width:auto;font-size:13.5px"><option value="admin">Make admin</option><option value="manager">Make manager</option><option value="support">Make support</option><option value="toggle"><%= s.disabled ? 'Enable' : 'Disable' %></option><option value="remove">Remove staff access</option></select>
+          <button class="btn btn-line btn-sm" type="submit">Apply</button></form><% } else { %><span class="xs muted">You</span><% } %></td></tr><% } %>
+    </tbody></table></div>
+  </section>
+  <form class="panel stack" method="post" action="/admin/staff">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <h2 style="font-size:16.5px">Add a staff member</h2>
+    <label class="field"><span class="label">Name</span><input class="input" name="name" required></label>
+    <label class="field"><span class="label">Email</span><input class="input" type="email" name="email" required></label>
+    <label class="field"><span class="label">Role</span><select class="select" name="role"><option value="support">Support</option><option value="manager">Manager</option><option value="admin">Admin</option></select></label>
+    <label class="field"><span class="label">Temporary password</span><input class="input" type="password" name="password" required minlength="8" autocomplete="new-password"><span class="hint">Share it privately and ask them to change it after signing in.</span></label>
+    <button class="btn btn-primary btn-sm" type="submit">Add staff member</button>
+  </form>
+</div>
+<section class="panel" style="margin-top:16px">
+  <div class="panel-head"><h2>Activity log</h2><span class="xs muted">Last 60 staff actions</span></div>
+  <div class="t-wrap"><table class="t"><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Item</th></tr></thead><tbody>
+    <% for (const a of log) { %><tr><td class="small"><%= dateTimeFmt(a.created_at) %></td><td class="small"><%= a.name || 'System' %></td><td><code class="small"><%= a.action %></code></td><td class="small"><%= a.entity ? a.entity + ' ' + (a.entity_id || '') : '' %></td></tr><% } %>
+  </tbody></table></div>
+</section>
+<%- include('partials/bottom', locals) %>

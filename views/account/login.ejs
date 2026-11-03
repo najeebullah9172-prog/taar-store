@@ -1,0 +1,29 @@
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <div class="auth-wrap">
+    <div class="auth-tabs" role="tablist">
+      <a href="/account/login<%= next ? '?next=' + encodeURIComponent(next) : '' %>" <%= mode === 'login' ? 'aria-current=page' : '' %>>Sign in</a>
+      <a href="/account/register<%= next ? '?next=' + encodeURIComponent(next) : '' %>" <%= mode === 'register' ? 'aria-current=page' : '' %>>Create account</a>
+    </div>
+    <form class="card stack" method="post" action="/account/<%= mode %>" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="next" value="<%= next %>">
+      <h1 style="font-size:24px"><%= mode === 'login' ? 'Welcome back' : 'Create your account' %></h1>
+      <% if (mode === 'register') { %><p class="small muted" style="margin:0">Track orders, save addresses and keep your wishlist on every device.</p><% } %>
+      <% if (errors._) { %><div class="alert alert-error" role="alert"><svg class="i"><use href="#i-alert"/></svg><div><%= errors._ %></div></div><% } %>
+      <% if (mode === 'register') { %>
+        <label class="field <%= errors.name ? 'has-error' : '' %>"><span class="label">Full name</span><input class="input" name="name" autocomplete="name" required value="<%= values.name || '' %>"><% if (errors.name) { %><div class="err"><%= errors.name %></div><% } %></label>
+      <% } %>
+      <label class="field <%= errors.email ? 'has-error' : '' %>"><span class="label">Email</span><input class="input" type="email" name="email" autocomplete="email" required value="<%= values.email || '' %>"><% if (errors.email) { %><div class="err"><%= errors.email %></div><% } %></label>
+      <% if (mode === 'register') { %>
+        <label class="field <%= errors.phone ? 'has-error' : '' %>"><span class="label">Mobile number <span class="opt">(optional)</span></span><input class="input" type="tel" name="phone" autocomplete="tel" placeholder="0300 1234567" value="<%= values.phone || '' %>"><% if (errors.phone) { %><div class="err"><%= errors.phone %></div><% } %></label>
+      <% } %>
+      <label class="field <%= errors.password ? 'has-error' : '' %>"><span class="label">Password</span><input class="input" type="password" name="password" autocomplete="<%= mode === 'login' ? 'current-password' : 'new-password' %>" required>
+        <% if (mode === 'register') { %><span class="hint">At least 8 characters with a letter and a number.</span><% } %><% if (errors.password) { %><div class="err"><%= errors.password %></div><% } %></label>
+      <% if (mode === 'register') { %><label class="check small"><input type="checkbox" name="marketing" <%= values.marketing ? 'checked' : '' %>>Email me about new arrivals and price drops</label><% } %>
+      <button class="btn btn-ink btn-block btn-lg" type="submit"><%= mode === 'login' ? 'Sign in' : 'Create account' %></button>
+      <% if (mode === 'login') { %><a class="link small" href="/account/forgot" style="text-align:center;display:block">Forgot your password?</a><% } %>
+    </form>
+  </div>
+</div>
+<%- include('../partials/bottom', locals) %>

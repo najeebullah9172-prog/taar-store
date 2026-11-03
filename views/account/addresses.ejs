@@ -1,0 +1,44 @@
+<% locals.scripts = ['checkout']; const v = values || {}; %>
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <header class="page-head"><h1>Addresses</h1></header>
+  <div class="account">
+    <%- include('../partials/acct-nav') %>
+    <div class="stack">
+      <% if (addresses.length) { %>
+      <section class="card">
+        <% for (const a of addresses) { %>
+          <div class="order-row" style="grid-template-columns:1fr auto">
+            <div><div style="font-weight:600"><%= a.label || a.full_name %> <% if (a.is_default) { %><span class="pill pill-blue">Default</span><% } %></div>
+              <div class="small muted"><%= a.full_name %>, <%= a.line1 %><%= a.line2 ? ', ' + a.line2 : '' %>, <%= a.city %>, <%= a.province %>. <span class="num"><%= formatPhone(a.phone) %></span></div></div>
+            <div class="row">
+              <a class="btn btn-ghost btn-sm" href="/account/addresses/<%= a.id %>/edit">Edit</a>
+              <% if (!a.is_default) { %><form method="post" action="/account/addresses/<%= a.id %>/default"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost btn-sm" type="submit">Make default</button></form><% } %>
+              <form method="post" action="/account/addresses/<%= a.id %>/delete" data-confirm="Remove this address?"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost btn-sm" type="submit">Remove</button></form>
+            </div>
+          </div>
+        <% } %>
+      </section>
+      <% } %>
+      <form class="card stack" method="post" action="/account/addresses<%= editing ? '/' + editing : '' %>" id="address-form" data-checkout>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <h2 style="font-size:19px"><%= editing ? 'Edit address' : 'Add an address' %></h2>
+        <div class="grid-2">
+          <label class="field"><span class="label">Label <span class="opt">(optional)</span></span><input class="input" name="label" placeholder="Home, Office" value="<%= v.label || '' %>"></label>
+          <label class="field <%= errors.full_name ? 'has-error' : '' %>"><span class="label">Full name</span><input class="input" name="full_name" required value="<%= v.full_name || '' %>"><% if (errors.full_name) { %><div class="err"><%= errors.full_name %></div><% } %></label>
+        </div>
+        <label class="field <%= errors.phone ? 'has-error' : '' %>"><span class="label">Mobile number</span><input class="input" name="phone" type="tel" required value="<%= formatPhone(v.phone) || v.phone || '' %>"><% if (errors.phone) { %><div class="err"><%= errors.phone %></div><% } %></label>
+        <label class="field <%= errors.line1 ? 'has-error' : '' %>"><span class="label">Address</span><input class="input" name="line1" required value="<%= v.line1 || '' %>"><% if (errors.line1) { %><div class="err"><%= errors.line1 %></div><% } %></label>
+        <label class="field"><span class="label">Area or landmark <span class="opt">(optional)</span></span><input class="input" name="line2" value="<%= v.line2 || '' %>"></label>
+        <div class="grid-2">
+          <label class="field <%= errors.city ? 'has-error' : '' %>"><span class="label">City</span><select class="select" name="city" required data-city><option value="">Choose your city</option><% for (const c of cities) { %><option data-province="<%= cityProvince[c] %>" <%= v.city === c ? 'selected' : '' %>><%= c %></option><% } %></select><% if (errors.city) { %><div class="err"><%= errors.city %></div><% } %></label>
+          <label class="field <%= errors.province ? 'has-error' : '' %>"><span class="label">Province</span><select class="select" name="province" required data-province-select><option value="">Choose province</option><% for (const p of provinces) { %><option <%= v.province === p ? 'selected' : '' %>><%= p %></option><% } %></select><% if (errors.province) { %><div class="err"><%= errors.province %></div><% } %></label>
+        </div>
+        <label class="field" style="max-width:220px"><span class="label">Postal code <span class="opt">(optional)</span></span><input class="input" name="postal_code" inputmode="numeric" maxlength="5" value="<%= v.postal_code || '' %>"><% if (errors.postal_code) { %><div class="err"><%= errors.postal_code %></div><% } %></label>
+        <label class="check"><input type="checkbox" name="is_default" <%= v.is_default ? 'checked' : '' %>>Use as my default address</label>
+        <div class="row"><button class="btn btn-ink" type="submit">Save address</button><% if (editing) { %><a class="btn btn-ghost" href="/account/addresses">Cancel</a><% } %></div>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('../partials/bottom', locals) %>

@@ -1,0 +1,18 @@
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <header class="page-head"><h1>Your orders</h1></header>
+  <div class="account">
+    <%- include('../partials/acct-nav') %>
+    <section class="card">
+      <% if (!orders.length) { %><div class="empty" style="padding:24px"><h2>No orders yet</h2><p>Orders you place while signed in, or with this email as a guest, show up here.</p><a class="btn btn-ink" href="/shop">Start shopping</a></div><% } %>
+      <% for (const o of orders) { %>
+        <a class="order-row" href="/account/orders/<%= o.number %>">
+          <span class="img"><img src="<%= o.image %>" alt=""></span>
+          <div><div style="font-weight:600"><span class="num"><%= o.number %></span></div><div class="small muted"><%= dateFmt(o.created_at) %>, <%= o.items %> item<%= o.items === 1 ? '' : 's' %>, <span class="num"><%= money(o.total) %></span></div></div>
+          <%- include('../partials/status-pill', { s: o.status }) %>
+        </a>
+      <% } %>
+    </section>
+  </div>
+</div>
+<%- include('../partials/bottom', locals) %>

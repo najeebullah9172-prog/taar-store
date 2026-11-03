@@ -1,0 +1,16 @@
+<%- include('../partials/top', locals) %>
+<div class="wrap"><div class="auth-wrap">
+  <div class="card stack">
+    <h1 style="font-size:24px">Reset your password</h1>
+    <% if (sent) { %>
+      <div class="alert alert-success"><svg class="i"><use href="#i-check"/></svg><div>If an account uses that email, a reset link is on its way. It expires in one hour.</div></div>
+      <a class="btn btn-line btn-block" href="/account/login">Back to sign in</a>
+    <% } else { %>
+      <p class="small muted" style="margin:0">Enter your email and we will send you a link to choose a new password.</p>
+      <form method="post" class="stack"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label class="field"><span class="label">Email</span><input class="input" type="email" name="email" required autocomplete="email"></label>
+        <button class="btn btn-ink btn-block" type="submit">Send reset link</button></form>
+    <% } %>
+  </div>
+</div></div>
+<%- include('../partials/bottom', locals) %>

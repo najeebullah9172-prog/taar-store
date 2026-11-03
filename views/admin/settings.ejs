@@ -1,0 +1,33 @@
+<% locals.title = 'Settings'; const st = s.store, pay = s.payments; const banks = (pay.bank_transfer && pay.bank_transfer.accounts || []).concat([{}]); %>
+<%- include('partials/top', locals) %>
+<form method="post" action="/admin/settings">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="cols cols-2">
+    <section class="panel stack">
+      <h2 style="font-size:16.5px">Store details</h2>
+      <div class="grid-2"><label class="field"><span class="label">Store name</span><input class="input" name="name" value="<%= st.name %>"></label><label class="field"><span class="label">Legal name</span><input class="input" name="legal_name" value="<%= st.legal_name %>"></label></div>
+      <div class="grid-2"><label class="field"><span class="label">Support email</span><input class="input" type="email" name="email" value="<%= st.email %>"></label><label class="field"><span class="label">Phone</span><input class="input" name="phone" value="<%= st.phone %>"></label></div>
+      <div class="grid-2"><label class="field"><span class="label">WhatsApp</span><input class="input" name="whatsapp" value="<%= st.whatsapp %>"></label><label class="field"><span class="label">Opening hours</span><input class="input" name="hours" value="<%= st.hours %>"></label></div>
+      <label class="field"><span class="label">Address</span><input class="input" name="address" value="<%= st.address %>"></label>
+      <label class="field"><span class="label">Announcement bar</span><input class="input" name="announcement" value="<%= s.announcement %>" maxlength="200"><span class="hint">Shown at the top of every page. Leave empty to hide it.</span></label>
+      <div class="grid-2"><label class="field"><span class="label">Return window (days)</span><input class="input" type="number" min="0" name="return_days" value="<%= s.policies.return_days %>"></label><label class="field"><span class="label">Cancellation window (hours)</span><input class="input" type="number" min="0" name="cancellation_hours" value="<%= s.policies.cancellation_hours %>"></label></div>
+    </section>
+    <section class="panel stack">
+      <h2 style="font-size:16.5px">Payments</h2>
+      <label class="check"><input type="checkbox" name="cod_enabled" <%= pay.cod && pay.cod.enabled ? 'checked' : '' %>><strong>Cash on delivery</strong></label>
+      <div class="grid-2"><label class="field"><span class="label">COD handling fee (Rs)</span><input class="input" type="number" min="0" name="cod_fee" value="<%= pay.cod ? pay.cod.fee : 0 %>"></label><label class="field"><span class="label">Maximum COD order (Rs)</span><input class="input" type="number" min="0" name="cod_max" value="<%= pay.cod ? pay.cod.max_order : '' %>" placeholder="No limit"></label></div>
+      <label class="check" style="margin-top:8px"><input type="checkbox" name="bank_enabled" <%= pay.bank_transfer && pay.bank_transfer.enabled ? 'checked' : '' %>><strong>Bank transfer</strong></label>
+      <% banks.forEach((b) => { %>
+        <div class="grid-2"><input class="input" name="bank_name" placeholder="Bank" value="<%= b.bank || '' %>"><input class="input" name="bank_title" placeholder="Account title" value="<%= b.title || '' %>"><input class="input" name="bank_account" placeholder="Account number" value="<%= b.account || '' %>"><input class="input" name="bank_iban" placeholder="IBAN" value="<%= b.iban || '' %>"></div>
+      <% }) %>
+      <label class="check" style="margin-top:8px"><input type="checkbox" name="card_enabled" <%= pay.card && pay.card.enabled ? 'checked' : '' %>><strong>Online payments (cards and wallets)</strong></label>
+      <label class="field"><span class="label">Gateway</span><select class="select" name="card_provider">
+        <option value="sandbox" <%= pay.card && pay.card.provider === 'sandbox' ? 'selected' : '' %>>Test gateway (no real money)</option>
+        <option value="safepay" <%= pay.card && pay.card.provider === 'safepay' ? 'selected' : '' %>>Safepay<%= env.safepay ? '' : ' (keys missing)' %></option>
+        <option value="jazzcash" <%= pay.card && pay.card.provider === 'jazzcash' ? 'selected' : '' %>>JazzCash<%= env.jazzcash ? '' : ' (keys missing)' %></option></select></label>
+      <div class="alert alert-info small"><svg class="i"><use href="#i-info"/></svg><div>Test gateway is <%= env.sandbox ? 'on' : 'off' %>. Real gateways need merchant keys in the server's .env file and the adapter finished in src/lib/payments.js. Email delivery is <%= env.smtp ? 'on' : 'off; emails are only logged in Messages' %>.</div></div>
+    </section>
+  </div>
+  <div class="sticky-save"><button class="btn btn-primary" type="submit">Save settings</button></div>
+</form>
+<%- include('partials/bottom', locals) %>

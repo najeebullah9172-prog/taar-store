@@ -1,0 +1,25 @@
+<% locals.title = 'Shipping'; locals.sub = 'Delivery zones, fees and timings. The zone with no cities covers the rest of Pakistan.'; const all = zones.concat([{ id: '', name: '', cities: [], standard_rate: '', express_rate: '', per_kg: 0, free_over: '', eta_min: 2, eta_max: 4, express_eta: 1, cod_available: 1, active: 1, _new: true }]); %>
+<%- include('partials/top', locals) %>
+<form method="post" action="/admin/shipping">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <% all.forEach((z, i) => { %>
+    <section class="panel">
+      <div class="panel-head"><h2><%= z._new ? 'Add a zone' : z.name %></h2><% if (!z._new) { %><span class="small muted"><%= z.cities.length ? z.cities.length + ' cities' : 'All other cities' %></span><% } %></div>
+      <input type="hidden" name="zones[<%= i %>][id]" value="<%= z.id %>">
+      <div class="cols cols-3">
+        <label class="field"><span class="label">Zone name</span><input class="input" name="zones[<%= i %>][name]" value="<%= z.name %>" <%= z._new ? '' : 'required' %>></label>
+        <label class="field"><span class="label">Standard fee (Rs)</span><input class="input" type="number" min="0" name="zones[<%= i %>][standard_rate]" value="<%= z.standard_rate %>"></label>
+        <label class="field"><span class="label">Express fee (Rs)</span><input class="input" type="number" min="0" name="zones[<%= i %>][express_rate]" value="<%= z.express_rate ?? '' %>" placeholder="No express"></label>
+        <label class="field"><span class="label">Free delivery over (Rs)</span><input class="input" type="number" min="0" name="zones[<%= i %>][free_over]" value="<%= z.free_over ?? '' %>" placeholder="Never free"></label>
+        <label class="field"><span class="label">Extra per kg above 2 kg (Rs)</span><input class="input" type="number" min="0" name="zones[<%= i %>][per_kg]" value="<%= z.per_kg %>"></label>
+        <div class="grid-2"><label class="field"><span class="label">Days, from</span><input class="input" type="number" min="0" name="zones[<%= i %>][eta_min]" value="<%= z.eta_min %>"></label><label class="field"><span class="label">to</span><input class="input" type="number" min="0" name="zones[<%= i %>][eta_max]" value="<%= z.eta_max %>"></label></div>
+        <label class="field"><span class="label">Express days (0 means same day)</span><input class="input" type="number" min="0" name="zones[<%= i %>][express_eta]" value="<%= z.express_eta %>"></label>
+      </div>
+      <div class="row" style="margin-top:14px"><label class="check"><input type="checkbox" name="zones[<%= i %>][cod_available]" <%= z.cod_available ? 'checked' : '' %>>Cash on delivery available</label><label class="check"><input type="checkbox" name="zones[<%= i %>][active]" <%= z.active ? 'checked' : '' %>>Zone active</label></div>
+      <details style="margin-top:14px" <%= z.cities.length && z.cities.length < 12 ? 'open' : '' %>><summary class="small link" style="cursor:pointer">Cities in this zone (<%= z.cities.length || 'none, so it covers all other cities' %>)</summary>
+        <div class="city-chips" style="margin-top:10px"><% for (const c of cities) { %><label class="chip-check"><input type="checkbox" name="zones[<%= i %>][cities]" value="<%= c %>" <%= z.cities.includes(c) ? 'checked' : '' %>><%= c %></label><% } %></div></details>
+    </section>
+  <% }) %>
+  <div class="sticky-save"><button class="btn btn-primary" type="submit">Save shipping zones</button></div>
+</form>
+<%- include('partials/bottom', locals) %>

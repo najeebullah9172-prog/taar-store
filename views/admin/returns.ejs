@@ -1,0 +1,27 @@
+<% locals.title = 'Returns'; locals.sub = 'Requests customers make from their account within the return window'; const reasons = { defective: 'Faulty or damaged', wrong_item: 'Wrong item', not_as_described: 'Not as described', changed_mind: 'Changed mind', other: 'Other' }; %>
+<%- include('partials/top', locals) %>
+<% if (!list.length) { %><section class="panel"><p class="muted" style="margin:0">No return requests yet.</p></section><% } %>
+<% for (const r of list) { %>
+  <section class="panel">
+    <div class="panel-head"><h2>Order <a class="link" href="/admin/orders/<%= r.order_id %>"><%= r.number %></a>, <%= r.full_name %></h2><%- include('partials/opill', { s: r.status }) %></div>
+    <div class="cols cols-2">
+      <div class="small stack">
+        <div><strong>Reason:</strong> <%= reasons[r.reason] %><%= r.details ? '. ' + r.details : '' %></div>
+        <div><strong>Items:</strong> <%= r.lines.map(l => l.qty + ' x ' + l.name + (l.variant_label ? ' (' + l.variant_label + ')' : '')).join(', ') %></div>
+        <div><strong>Value:</strong> <%= money(r.value) %>, paid by <%= { cod: 'cash on delivery', bank_transfer: 'bank transfer', card: 'card' }[r.payment_method] %></div>
+        <div class="muted">Requested <%= dateTimeFmt(r.created_at) %><%= r.admin_note ? '. Note: ' + r.admin_note : '' %><%= r.refund_amount ? '. Refunded ' + money(r.refund_amount) : '' %></div>
+      </div>
+      <% const next = { requested: ['approved', 'rejected'], approved: ['received', 'rejected'], received: ['refunded'] }[r.status] || []; if (next.length) { %>
+      <form method="post" action="/admin/returns/<%= r.id %>" class="stack">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input class="input" name="note" placeholder="Note for the customer (optional)" maxlength="500">
+        <% if (next.includes('refunded')) { %><label class="field"><span class="label">Refund amount (Rs)</span><input class="input" type="number" min="0" name="refund_amount" value="<%= r.value %>"></label><% } %>
+        <div class="row">
+          <% for (const s of next) { %><button class="btn <%= s === 'rejected' ? 'btn-danger' : 'btn-primary' %> btn-sm" type="submit" name="status" value="<%= s %>"><%= { approved: 'Approve and arrange pickup', rejected: 'Decline', received: 'Mark item received (restocks it)', refunded: 'Mark refunded' }[s] %></button><% } %>
+        </div>
+      </form>
+      <% } %>
+    </div>
+  </section>
+<% } %>
+<%- include('partials/bottom', locals) %>

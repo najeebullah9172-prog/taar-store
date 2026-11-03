@@ -1,0 +1,17 @@
+<% locals.title = 'Reviews'; locals.sub = 'New reviews stay hidden until someone publishes them'; %>
+<%- include('partials/top', locals) %>
+<nav class="tabs-row"><% for (const s of ['pending', 'published', 'hidden']) { %><a href="/admin/reviews?status=<%= s %>" <%= status === s ? 'aria-current=page' : '' %>><%= { pending: 'Waiting', published: 'Published', hidden: 'Hidden' }[s] %><span class="n"><%= counts[s] || 0 %></span></a><% } %></nav>
+<% if (!list.length) { %><section class="panel"><p class="muted" style="margin:0">Nothing here right now.</p></section><% } %>
+<% for (const r of list) { %>
+  <section class="panel">
+    <div class="panel-head"><div><strong><%= r.rating %> out of 5</strong>, <%= r.title || 'No title' %><div class="xs muted"><a class="link" href="/p/<%= r.slug %>" target="_blank"><%= r.product %></a>, by <%= r.author %><%= r.city ? ' from ' + r.city : '' %>, <%= dateFmt(r.created_at) %><%= r.verified ? ', verified buyer' : '' %></div></div></div>
+    <p style="margin:0 0 12px"><%= r.body %></p>
+    <form method="post" action="/admin/reviews/<%= r.id %>?from=<%= status %>" class="row">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <% if (r.status !== 'published') { %><button class="btn btn-primary btn-sm" name="action" value="published">Publish</button><% } %>
+      <% if (r.status !== 'hidden') { %><button class="btn btn-line btn-sm" name="action" value="hidden">Hide</button><% } %>
+      <button class="btn btn-ghost btn-sm" name="action" value="delete" data-confirm-click="Delete this review permanently?">Delete</button>
+    </form>
+  </section>
+<% } %>
+<%- include('partials/bottom', locals) %>

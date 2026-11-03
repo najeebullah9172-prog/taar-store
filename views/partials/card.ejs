@@ -1,0 +1,40 @@
+<%
+  const pr = p;
+  const lowStock = pr.low_stock;
+  const shownColors = pr.colors.slice(0, 5);
+%>
+<article class="pcard" data-product-id="<%= pr.id %>">
+  <a class="pcard-media" href="/p/<%= pr.slug %>" tabindex="-1" aria-hidden="true">
+    <img class="main<%= pr.image2 ? ' has-alt' : '' %>" src="<%= pr.image %>" alt="" loading="lazy" decoding="async" width="600" height="600">
+    <% if (pr.image2) { %><img class="alt" src="<%= pr.image2 %>" alt="" loading="lazy" decoding="async" width="600" height="600"><% } %>
+  </a>
+  <div class="pcard-badges">
+    <% if (pr.discount_pct >= 3) { %><span class="pill pill-sale">Save <%= pr.discount_pct %>%</span><% } %>
+    <% if (pr.is_new && !pr.discount_pct) { %><span class="pill pill-new">New</span><% } %>
+  </div>
+  <button class="icon-btn pcard-wish" type="button" data-wish="<%= pr.id %>" aria-pressed="false" aria-label="Save <%= pr.name %> to wishlist"><svg class="i"><use href="#i-heart"/></svg></button>
+  <div class="pcard-body">
+    <div class="pcard-brand"><%= pr.brand %></div>
+    <h3 class="pcard-name"><a href="/p/<%= pr.slug %>"><%= pr.name %></a></h3>
+    <% if (pr.rating_count) { %>
+      <div class="pcard-rating"><span class="stars" aria-hidden="true"><svg class="i on"><use href="#i-star"/></svg></span><span><%= pr.rating_avg.toFixed(1) %> (<%= pr.rating_count %>)</span><span class="sr">Rated <%= pr.rating_avg %> out of 5 from <%= pr.rating_count %> reviews</span></div>
+    <% } %>
+    <% if (shownColors.length > 1) { %>
+      <div class="swatches" aria-label="<%= pr.colors.length %> colours"><% for (const c of shownColors) { %><span class="sw" style="background:<%= swatch(c) %>" title="<%= c %>"></span><% } %><% if (pr.colors.length > 5) { %><span class="sw-more">+<%= pr.colors.length - 5 %></span><% } %></div>
+    <% } %>
+    <div class="pcard-foot">
+      <div>
+        <div class="pcard-price price">
+          <% if (pr.price_max > pr.price) { %><span class="from">From</span><% } %><span class="now"><%= money(pr.price) %></span><% if (pr.compare_price > pr.price) { %><span class="was"><%= money(pr.compare_price) %></span><% } %>
+        </div>
+        <% if (!pr.in_stock) { %><div class="pcard-stock out-stock">Out of stock</div>
+        <% } else if (lowStock) { %><div class="pcard-stock low-stock">Only <%= pr.stock_total %> left</div><% } %>
+      </div>
+      <% if (pr.in_stock && pr.variant_count === 1 && pr.quick_variant) { %>
+        <button class="pcard-add" type="button" data-add="<%= pr.quick_variant %>" aria-label="Add <%= pr.name %> to cart"><svg class="i"><use href="#i-plus"/></svg></button>
+      <% } else if (pr.in_stock) { %>
+        <a class="pcard-add" href="/p/<%= pr.slug %>" aria-label="Choose options for <%= pr.name %>"><svg class="i"><use href="#i-right"/></svg></a>
+      <% } %>
+    </div>
+  </div>
+</article>

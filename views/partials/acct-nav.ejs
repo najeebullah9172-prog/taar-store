@@ -1,0 +1,8 @@
+<nav class="acct-nav" aria-label="Account">
+  <a href="/account" <%= tab === 'overview' ? 'aria-current=page' : '' %>><svg class="i"><use href="#i-grid"/></svg>Overview</a>
+  <a href="/account/orders" <%= tab === 'orders' ? 'aria-current=page' : '' %>><svg class="i"><use href="#i-box"/></svg>Orders</a>
+  <a href="/account/addresses" <%= tab === 'addresses' ? 'aria-current=page' : '' %>><svg class="i"><use href="#i-pin"/></svg>Addresses</a>
+  <a href="/wishlist"><svg class="i"><use href="#i-heart"/></svg>Wishlist</a>
+  <a href="/account/profile" <%= tab === 'profile' ? 'aria-current=page' : '' %>><svg class="i"><use href="#i-user"/></svg>Profile and password</a>
+  <form method="post" action="/account/logout"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit"><svg class="i"><use href="#i-logout"/></svg>Sign out</button></form>
+</nav>

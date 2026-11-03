@@ -1,0 +1,114 @@
+</main>
+<% if (!locals.bare) { %>
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-about">
+        <a class="logo" href="/" aria-label="Taar home">
+          <svg viewBox="0 0 44 24" aria-hidden="true"><path d="M2 12h24" stroke="#2346c8" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="33" cy="12" r="7" stroke="#2346c8" stroke-width="3" fill="none"/></svg>
+          <span class="logo-word">taar</span>
+        </a>
+        <p>Genuine electronics with official warranty, delivered to every city in Pakistan.</p>
+        <div class="foot-contact">
+          <% if (store.phone) { %><div><svg class="i"><use href="#i-phone"/></svg><a href="tel:<%= store.phone.replace(/\s/g, '') %>"><%= store.phone %></a></div><% } %>
+          <% if (store.email) { %><div><svg class="i"><use href="#i-mail"/></svg><a href="mailto:<%= store.email %>"><%= store.email %></a></div><% } %>
+          <% if (store.hours) { %><div><svg class="i"><use href="#i-clock"/></svg><span><%= store.hours %></span></div><% } %>
+        </div>
+      </div>
+      <div>
+        <h3>Shop</h3>
+        <ul>
+          <% for (const c of navCategories.slice(0, 7)) { %><li><a href="/c/<%= c.slug %>"><%= c.name %></a></li><% } %>
+          <li><a href="/brands">All brands</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Help</h3>
+        <ul>
+          <li><a href="/track">Track an order</a></li>
+          <li><a href="/pages/shipping">Delivery</a></li>
+          <li><a href="/pages/returns">Returns and refunds</a></li>
+          <li><a href="/pages/warranty">Warranty</a></li>
+          <li><a href="/pages/payment-methods">Payment methods</a></li>
+          <li><a href="/pages/faq">Questions</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Company</h3>
+        <ul>
+          <li><a href="/pages/about">About Taar</a></li>
+          <li><a href="/contact">Contact us</a></li>
+          <li><a href="/pages/privacy">Privacy</a></li>
+          <li><a href="/pages/terms">Terms of sale</a></li>
+        </ul>
+      </div>
+      <div class="foot-news">
+        <h3>New arrivals and price drops</h3>
+        <p class="small muted" style="margin:0">One email a week at most. Unsubscribe any time.</p>
+        <form class="news-form" action="/newsletter" method="post" data-newsletter>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label class="sr" for="news-email">Email address</label>
+          <input class="input" id="news-email" type="email" name="email" placeholder="you@example.com" required maxlength="160">
+          <button class="btn btn-ink" type="submit">Subscribe</button>
+        </form>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>&copy; <%= new Date().getFullYear() %> <%= store.legal_name || 'Taar' %>. Prices in Pakistani rupees, including taxes.</span>
+      <div class="pay-chips" aria-label="Payment methods we accept">
+        <span class="pay-chip">Cash on delivery</span><span class="pay-chip">Visa</span><span class="pay-chip">Mastercard</span>
+        <span class="pay-chip">JazzCash</span><span class="pay-chip">Easypaisa</span><span class="pay-chip">Bank transfer</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="drawer" id="drawer-cart" aria-hidden="true">
+  <div class="drawer-bg" data-close></div>
+  <section class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+    <div class="drawer-head">
+      <h2 id="cart-title">Your cart</h2>
+      <button class="icon-btn" type="button" data-close aria-label="Close cart"><svg class="i"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="drawer-body" data-cart-body><p class="muted" style="padding:24px 0">Loading your cart</p></div>
+    <div class="drawer-foot" data-cart-foot hidden>
+      <div class="totals">
+        <div><span>Subtotal</span><span class="num" data-cart-subtotal></span></div>
+        <div class="disc" data-cart-discount-row hidden><span>Discount</span><span class="num" data-cart-discount></span></div>
+      </div>
+      <p class="xs muted" style="margin:8px 0 14px">Delivery is worked out at checkout from your city.</p>
+      <a class="btn btn-primary btn-block btn-lg" href="/checkout">Check out</a>
+      <a class="btn btn-ghost btn-block" href="/cart" style="margin-top:6px">View cart and apply a code</a>
+    </div>
+  </section>
+</div>
+
+<div class="drawer drawer-left" id="drawer-menu" aria-hidden="true">
+  <div class="drawer-bg" data-close></div>
+  <section class="drawer-panel" role="dialog" aria-modal="true" aria-label="Menu">
+    <div class="drawer-head">
+      <span class="logo-word">taar</span>
+      <button class="icon-btn" type="button" data-close aria-label="Close menu"><svg class="i"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="drawer-body">
+      <ul class="menu-list">
+        <% for (const c of navCategories) { %>
+          <li><a href="/c/<%= c.slug %>"><svg class="i"><use href="#i-<%= c.icon || 'plug' %>"/></svg><%= c.name %></a></li>
+        <% } %>
+        <li><a href="/new"><svg class="i"><use href="#i-star"/></svg>New arrivals</a></li>
+        <li><a href="/deals"><svg class="i"><use href="#i-tag"/></svg>Deals</a></li>
+      </ul>
+      <ul class="menu-list">
+        <li><a href="<%= user ? (user.role === 'customer' ? '/account' : '/admin') : '/account/login' %>"><svg class="i"><use href="#i-user"/></svg><%= user ? 'Your account' : 'Sign in or create an account' %></a></li>
+        <li><a href="/track"><svg class="i"><use href="#i-truck"/></svg>Track an order</a></li>
+        <li><a href="/contact"><svg class="i"><use href="#i-chat"/></svg>Help and contact</a></li>
+      </ul>
+    </div>
+  </section>
+</div>
+<% } %>
+<div class="toasts" aria-live="polite" data-toasts></div>
+<script src="/js/store.js?v=<%= assetV %>" defer></script>
+<% if (locals.scripts) { for (const s of scripts) { %><script src="/js/<%= s %>.js?v=<%= assetV %>" defer></script><% } } %>
+</body>
+</html>

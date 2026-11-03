@@ -49,10 +49,17 @@ tx(() => {
 
   // ---------- staff and demo customer ----------
   const pw = (s) => bcrypt.hashSync(s, 11);
+  // On a live server the demo staff passwords from the README must never work.
+  // The admin password comes from ADMIN_PASSWORD; the other staff get random ones.
+  const live = process.env.NODE_ENV === 'production';
+  const random = () => crypto.randomBytes(18).toString('base64url');
+  if (live && !process.env.ADMIN_PASSWORD) {
+    console.warn('ADMIN_PASSWORD is not set, so the admin account got a random password. Set ADMIN_PASSWORD and restart to choose your own.');
+  }
   const users = [
-    ['admin@taar.pk', process.env.ADMIN_PASSWORD || 'Admin!2026', 'Sara Qureshi', 'admin'],
-    ['manager@taar.pk', 'Manager!2026', 'Imran Butt', 'manager'],
-    ['support@taar.pk', 'Support!2026', 'Nadia Hussain', 'support'],
+    ['admin@taar.pk', process.env.ADMIN_PASSWORD || (live ? random() : 'Admin!2026'), 'Sara Qureshi', 'admin'],
+    ['manager@taar.pk', live ? random() : 'Manager!2026', 'Imran Butt', 'manager'],
+    ['support@taar.pk', live ? random() : 'Support!2026', 'Nadia Hussain', 'support'],
     ['ayesha@example.com', 'Customer!2026', 'Ayesha Khan', 'customer'],
   ];
   for (const [email, pass, name, role] of users) {
@@ -198,6 +205,5 @@ tx(() => {
 });
 
 console.log('Seed complete.');
-console.log('Admin login: admin@taar.pk /', process.env.ADMIN_PASSWORD || 'Admin!2026');
+console.log('Admin login: admin@taar.pk /', process.env.NODE_ENV === 'production' ? '(the ADMIN_PASSWORD you set)' : (process.env.ADMIN_PASSWORD || 'Admin!2026'));
 console.log('Customer login: ayesha@example.com / Customer!2026');
-void crypto;

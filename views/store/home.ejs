@@ -1,0 +1,190 @@
+<%
+  locals.jsonLd = [{
+    '@context': 'https://schema.org', '@type': 'Organization', name: 'Taar', url: baseUrl,
+    contactPoint: { '@type': 'ContactPoint', telephone: store.phone, contactType: 'customer service', areaServed: 'PK' },
+  }, {
+    '@context': 'https://schema.org', '@type': 'WebSite', name: 'Taar', url: baseUrl,
+    potentialAction: { '@type': 'SearchAction', target: baseUrl + '/search?q={search_term_string}', 'query-input': 'required name=search_term_string' },
+  }];
+%>
+<%- include('../partials/top', locals) %>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <h1>Genuine electronics, delivered across Pakistan.</h1>
+      <p class="lede">PTA approved phones, laptops and everything that plugs in. Pay cash when it arrives, or online if you prefer.</p>
+      <div class="hero-cta">
+        <a class="btn btn-ink btn-lg" href="/c/smartphones">Shop phones</a>
+        <a class="btn btn-line btn-lg" href="/deals">See this week's deals</a>
+      </div>
+      <ul class="hero-facts">
+        <li><svg class="i"><use href="#i-shield"/></svg>Official brand warranty</li>
+        <li><svg class="i"><use href="#i-cash"/></svg>Cash on delivery</li>
+        <li><svg class="i"><use href="#i-truck"/></svg>Same day in Lahore</li>
+        <li><svg class="i"><use href="#i-return"/></svg>7 day returns</li>
+      </ul>
+    </div>
+
+    <div class="stage" data-stage>
+      <div class="stage-tabs" role="tablist" aria-label="Featured products">
+        <% hero.forEach((p, i) => { %>
+          <button class="stage-tab" role="tab" type="button" id="stab-<%= i %>" aria-controls="sslide-<%= i %>" aria-selected="<%= i === 0 %>" tabindex="<%= i === 0 ? 0 : -1 %>"><%= p.name.replace(/^(Samsung|Apple|Sony) /, '') %></button>
+        <% }) %>
+      </div>
+      <% hero.forEach((p, i) => { const v = p.variants.find(x => x.stock > 0) || p.variants[0]; %>
+        <div class="stage-slide<%= i === 0 ? ' is-active' : '' %>" role="tabpanel" id="sslide-<%= i %>" aria-labelledby="stab-<%= i %>">
+          <img class="stage-img" src="<%= p.images[0] && p.images[0].url %>" alt="<%= p.name %>" width="600" height="600" <%= i === 0 ? 'fetchpriority=high' : 'loading=lazy' %>>
+          <div class="stage-info">
+            <div class="brand"><%= p.brand %></div>
+            <h2><%= p.name.replace(p.brand + ' ', '') %></h2>
+            <p><%= p.short_desc %></p>
+            <div class="stage-price price">
+              <span class="now"><%= p.price_max > p.price ? 'From ' : '' %><%= money(p.price) %></span>
+              <% if (p.compare_price > p.price) { %><span class="pill pill-amber">Save <%= money(p.compare_price - p.price) %></span><% } %>
+            </div>
+            <div class="row" style="flex-wrap:wrap">
+              <a class="btn btn-primary" href="/p/<%= p.slug %>">View details</a>
+              <% if (p.variants.length === 1 && v.stock > 0) { %>
+                <button class="btn btn-line" type="button" data-add="<%= v.id %>">Add to cart</button>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+      <div class="stage-foot"><span>Prices include taxes. You see the delivery fee before you pay.</span><a href="/shop" class="link">All products</a></div>
+    </div>
+  </div>
+</section>
+
+<section class="section-sm" aria-labelledby="cats-h">
+  <div class="wrap">
+    <h2 id="cats-h" class="sr">Shop by category</h2>
+    <nav class="rail" aria-label="Shop by category">
+      <ul class="rail-track">
+        <% for (const c of navCategories) { %>
+          <li><a href="/c/<%= c.slug %>">
+            <span class="rail-dot"><svg class="i"><use href="#i-<%= c.icon || 'plug' %>"/></svg></span>
+            <span class="rail-name"><%= c.name %></span>
+            <span class="rail-count"><%= plural(c.product_count, 'product') %></span>
+          </a></li>
+        <% } %>
+      </ul>
+    </nav>
+  </div>
+</section>
+
+<% if (deals.length) { %>
+<section class="section" aria-labelledby="deals-h">
+  <div class="wrap">
+    <div class="deal-band">
+      <div class="section-head">
+        <div>
+          <h2 id="deals-h">Price drops this week</h2>
+          <p>Lower than the usual price while current stock lasts.</p>
+        </div>
+        <div class="row">
+          <div class="scroll-btns"><button class="icon-btn" type="button" data-scroll="-1" aria-label="Scroll back"><svg class="i"><use href="#i-left"/></svg></button><button class="icon-btn" type="button" data-scroll="1" aria-label="Scroll forward"><svg class="i"><use href="#i-right"/></svg></button></div>
+          <a class="more" href="/deals">All deals<svg class="i i-sm"><use href="#i-right"/></svg></a>
+        </div>
+      </div>
+      <div class="scroller" data-scroller>
+        <% for (const p of deals) { %><%- include('../partials/card', { p }) %><% } %>
+      </div>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section class="section" aria-labelledby="feat-h" style="padding-top:8px">
+  <div class="wrap">
+    <div class="section-head">
+      <div><h2 id="feat-h">Picked for you</h2><p>Staff favourites across every category.</p></div>
+      <a class="more" href="/shop">Browse everything<svg class="i i-sm"><use href="#i-right"/></svg></a>
+    </div>
+    <div class="grid">
+      <% for (const p of featured) { %><%- include('../partials/card', { p }) %><% } %>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="best-h">
+  <div class="wrap">
+    <div class="section-head">
+      <div><h2 id="best-h">Best sellers</h2><p>What customers across Pakistan bought most this month.</p></div>
+      <div class="row">
+        <div class="scroll-btns"><button class="icon-btn" type="button" data-scroll="-1" aria-label="Scroll back"><svg class="i"><use href="#i-left"/></svg></button><button class="icon-btn" type="button" data-scroll="1" aria-label="Scroll forward"><svg class="i"><use href="#i-right"/></svg></button></div>
+      </div>
+    </div>
+    <div class="scroller" data-scroller>
+      <% for (const p of bestSellers) { %><%- include('../partials/card', { p }) %><% } %>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="new-h">
+  <div class="wrap">
+    <div class="section-head">
+      <div><h2 id="new-h">New arrivals</h2><p>Just landed in our Lahore warehouse.</p></div>
+      <a class="more" href="/new">See all new<svg class="i i-sm"><use href="#i-right"/></svg></a>
+    </div>
+    <div class="grid">
+      <% for (const p of newArrivals.slice(0, 8)) { %><%- include('../partials/card', { p }) %><% } %>
+    </div>
+  </div>
+</section>
+
+<section class="section hide" data-recent-section aria-labelledby="recent-h">
+  <div class="wrap">
+    <div class="section-head"><div><h2 id="recent-h">You looked at</h2></div></div>
+    <div class="scroller" data-recent></div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="brands-h">
+  <div class="wrap">
+    <div class="section-head">
+      <div><h2 id="brands-h">Official brands</h2><p>Bought from the brand or its authorised distributor in Pakistan.</p></div>
+      <a class="more" href="/brands">All brands<svg class="i i-sm"><use href="#i-right"/></svg></a>
+    </div>
+    <div class="brands-grid">
+      <% for (const b of brandList.slice(0, 12)) { %>
+        <a href="/brand/<%= b.slug %>"><span><%= b.name %><small><%= plural(b.product_count, 'product') %></small></span></a>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<% if (reviews.length) { %>
+<section class="section" aria-labelledby="rev-h">
+  <div class="wrap">
+    <div class="section-head">
+      <div><h2 id="rev-h">What customers say</h2><p>Reviews from customers who bought from us.</p></div>
+      <div class="rating-big"><strong class="num"><%= stats.avg %></strong><div><span class="stars stars-lg" aria-hidden="true"><% for (let s = 1; s <= 5; s++) { %><svg class="i <%= s <= Math.round(stats.avg) ? 'on' : 'off' %>"><use href="#i-star"/></svg><% } %></span><div class="small muted"><%= num(stats.n) %> reviews</div></div></div>
+    </div>
+    <div class="reviews-grid">
+      <% for (const r of reviews.slice(0, 3)) { %>
+        <article class="quote">
+          <span class="stars" aria-label="<%= r.rating %> out of 5"><% for (let s = 1; s <= 5; s++) { %><svg class="i <%= s <= r.rating ? 'on' : 'off' %>"><use href="#i-star"/></svg><% } %></span>
+          <h3><%= r.title %></h3>
+          <p><%= r.body %></p>
+          <footer><span><%= r.author %>, <%= r.city %><%= r.verified ? ', verified buyer' : '' %></span><a href="/p/<%= r.slug %>"><%= r.product %></a></footer>
+        </article>
+      <% } %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section class="section" style="padding-top:8px" aria-label="Our service">
+  <div class="wrap">
+    <div class="services">
+      <div class="service"><svg class="i"><use href="#i-truck"/></svg><div><h3>Delivery to every city</h3><p>Free over Rs 25,000 in major cities. Same day in Lahore before 1 pm.</p></div></div>
+      <div class="service"><svg class="i"><use href="#i-cash"/></svg><div><h3>Pay how you like</h3><p>Cash on delivery, bank transfer, cards, JazzCash and Easypaisa.</p></div></div>
+      <div class="service"><svg class="i"><use href="#i-shield"/></svg><div><h3>Official warranty</h3><p>Brand warranty on everything, with claims handled for you.</p></div></div>
+      <div class="service"><svg class="i"><use href="#i-return"/></svg><div><h3>7 day returns</h3><p>Free pickup if a product is faulty or not what you ordered.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/bottom', locals) %>

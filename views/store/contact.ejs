@@ -1,0 +1,31 @@
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <header class="page-head"><h1>Contact us</h1><p>We reply within one working day. For order questions, include your order number.</p></header>
+  <div class="cart-page">
+    <% if (sent) { %>
+      <div class="card"><div class="alert alert-success"><svg class="i"><use href="#i-check"/></svg><div>Message sent. We will reply to your email within one working day.</div></div></div>
+    <% } else { %>
+    <form class="card stack" method="post" action="/contact">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="grid-2">
+        <label class="field <%= errors.name ? 'has-error' : '' %>"><span class="label">Name</span><input class="input" name="name" required value="<%= values.name || '' %>"><% if (errors.name) { %><div class="err"><%= errors.name %></div><% } %></label>
+        <label class="field <%= errors.email ? 'has-error' : '' %>"><span class="label">Email</span><input class="input" type="email" name="email" required value="<%= values.email || '' %>"><% if (errors.email) { %><div class="err"><%= errors.email %></div><% } %></label>
+      </div>
+      <div class="grid-2">
+        <label class="field"><span class="label">Phone <span class="opt">(optional)</span></span><input class="input" name="phone" type="tel" value="<%= values.phone || '' %>"></label>
+        <label class="field"><span class="label">Order number <span class="opt">(optional)</span></span><input class="input" name="subject" value="<%= values.subject || '' %>"></label>
+      </div>
+      <label class="field <%= errors.body ? 'has-error' : '' %>"><span class="label">How can we help?</span><textarea class="textarea" name="body" required><%= values.body || '' %></textarea><% if (errors.body) { %><div class="err"><%= errors.body %></div><% } %></label>
+      <button class="btn btn-ink" type="submit">Send message</button>
+    </form>
+    <% } %>
+    <aside class="card stack">
+      <h2 style="font-size:18px">Other ways to reach us</h2>
+      <div class="row"><svg class="i"><use href="#i-phone"/></svg><a href="tel:<%= (store.phone || '').replace(/\s/g, '') %>"><%= store.phone %></a></div>
+      <div class="row"><svg class="i"><use href="#i-mail"/></svg><a href="mailto:<%= store.email %>"><%= store.email %></a></div>
+      <div class="row"><svg class="i"><use href="#i-pin"/></svg><span><%= store.address %></span></div>
+      <div class="row"><svg class="i"><use href="#i-clock"/></svg><span><%= store.hours %></span></div>
+    </aside>
+  </div>
+</div>
+<%- include('../partials/bottom', locals) %>

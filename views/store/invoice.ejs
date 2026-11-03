@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en-PK"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Invoice <%= order.number %></title>
+<meta name="robots" content="noindex"><link rel="stylesheet" href="/css/store.css?v=<%= assetV %>">
+<style>body{background:#fff}.inv{max-width:800px;margin:32px auto;padding:0 24px}.inv table{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:24px}.inv th,.inv td{padding:10px 0;border-bottom:1px solid var(--line);text-align:left}.inv td.r,.inv th.r{text-align:right}.inv .top{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}</style></head>
+<body><div class="inv">
+  <div class="top">
+    <div><div class="logo-word">taar</div><p class="small muted" style="margin-top:8px"><%= store.legal_name %><br><%= store.address %><br><%= store.phone %> | <%= store.email %></p></div>
+    <div style="text-align:right"><h1 style="font-size:28px">Invoice</h1><p class="small" style="margin-top:8px">Order <strong class="num"><%= order.number %></strong><br>Date <%= dateFmt(order.created_at) %><br>Payment: <%= { cod: 'Cash on delivery', bank_transfer: 'Bank transfer', card: 'Card or wallet' }[order.payment_method] %> (<%= order.payment_status.replace(/_/g, ' ') %>)</p></div>
+  </div>
+  <p class="small" style="margin-top:20px"><strong>Bill and ship to</strong><br><%= order.full_name %><br><%= order.line1 %><%= order.line2 ? ', ' + order.line2 : '' %><br><%= order.city %>, <%= order.province %><br><%= formatPhone(order.phone) %> | <%= order.email %></p>
+  <table><thead><tr><th>Item</th><th>SKU</th><th class="r">Qty</th><th class="r">Price</th><th class="r">Amount</th></tr></thead><tbody>
+  <% for (const it of order.items) { %><tr><td><%= it.name %><%= it.variant_label ? ' (' + it.variant_label + ')' : '' %></td><td class="num"><%= it.sku %></td><td class="r num"><%= it.qty %></td><td class="r num"><%= money(it.price) %></td><td class="r num"><%= money(it.price * it.qty) %></td></tr><% } %>
+  </tbody><tfoot>
+    <tr><td colspan="4" class="r">Subtotal</td><td class="r num"><%= money(order.subtotal) %></td></tr>
+    <% if (order.discount) { %><tr><td colspan="4" class="r">Discount</td><td class="r num">&minus;<%= money(order.discount) %></td></tr><% } %>
+    <tr><td colspan="4" class="r">Delivery</td><td class="r num"><%= money(order.shipping) %></td></tr>
+    <% if (order.payment_fee) { %><tr><td colspan="4" class="r">Cash handling fee</td><td class="r num"><%= money(order.payment_fee) %></td></tr><% } %>
+    <tr><td colspan="4" class="r"><strong>Total (taxes included)</strong></td><td class="r num"><strong><%= money(order.total) %></strong></td></tr>
+  </tfoot></table>
+  <p class="xs muted" style="margin-top:24px">Warranty is provided by the brand in Pakistan. Keep this invoice for warranty claims. Returns accepted within 7 days of delivery under our return policy.</p>
+  <button class="btn btn-ink no-print" type="button" data-print style="margin-top:12px"><svg class="i i-sm"><use href="#i-print"/></svg>Print</button>
+</div><%- include('../partials/icons') %><script src="/js/store.js?v=<%= assetV %>" defer></script></body></html>

@@ -1,0 +1,11 @@
+<% locals.meta = { title: title + ' | Taar', noindex: true }; %>
+<%- include('../partials/top', locals) %>
+<div class="wrap" style="max-width:640px">
+  <div class="empty" style="margin-top:48px">
+    <svg class="i"><use href="#i-<%= status === 404 ? 'search' : 'alert' %>"/></svg>
+    <h2><%= title %></h2>
+    <p><%= message %></p>
+    <div class="row" style="justify-content:center;flex-wrap:wrap"><a class="btn btn-ink" href="/">Go to the home page</a><a class="btn btn-line" href="/contact">Contact us</a></div>
+  </div>
+</div>
+<%- include('../partials/bottom', locals) %>

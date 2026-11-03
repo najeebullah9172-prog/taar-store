@@ -1,0 +1,14 @@
+<% locals.title = 'Customers'; locals.sub = total + ' with accounts, ' + guests + ' guest checkouts'; %>
+<%- include('partials/top', locals) %>
+<form class="filters-row" method="get"><input class="input" name="q" placeholder="Name, email or phone" value="<%= q %>" style="min-width:280px"><button class="btn btn-ink btn-sm" type="submit">Search</button></form>
+<section class="panel">
+  <div class="t-wrap"><table class="t">
+    <thead><tr><th>Customer</th><th>Phone</th><th>Joined</th><th class="r">Orders</th><th class="r">Spent</th><th>Last order</th></tr></thead>
+    <tbody><% for (const u of list) { %>
+      <tr><td><a class="rowlink" href="/admin/customers/<%= u.id %>"><%= u.name %></a> <% if (u.disabled) { %><span class="pill pill-red">Disabled</span><% } %><div class="xs muted"><%= u.email %></div></td>
+        <td class="small"><%= formatPhone(u.phone) %></td><td class="small"><%= dateFmt(u.created_at) %></td><td class="r"><%= u.orders %></td><td class="r"><%= money(u.spent) %></td><td class="small"><%= u.last_order ? dateFmt(u.last_order) : 'Never' %></td></tr>
+    <% } %><% if (!list.length) { %><tr class="empty-row"><td colspan="6">No customers found.</td></tr><% } %></tbody>
+  </table></div>
+  <%- include('partials/pager', { page, pages, query }) %>
+</section>
+<%- include('partials/bottom', locals) %>

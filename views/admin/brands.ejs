@@ -1,0 +1,24 @@
+<% locals.title = 'Brands'; const e = edit || {}; %>
+<%- include('partials/top', locals) %>
+<div class="cols cols-main">
+  <section class="panel">
+    <div class="t-wrap"><table class="t">
+      <thead><tr><th>Brand</th><th>Featured</th><th class="r">Products</th><th></th></tr></thead>
+      <tbody><% for (const b of list) { %>
+        <tr><td><strong><%= b.name %></strong><div class="xs muted">/brand/<%= b.slug %></div></td><td><%= b.featured ? 'Yes' : '' %></td><td class="r"><%= b.n %></td>
+          <td class="r"><div class="row" style="justify-content:flex-end"><a class="btn btn-ghost btn-sm" href="/admin/brands?edit=<%= b.id %>">Edit</a>
+          <form method="post" action="/admin/brands/<%= b.id %>/delete" data-confirm="Delete <%= b.name %>?"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost btn-sm" type="submit">Delete</button></form></div></td></tr>
+      <% } %></tbody>
+    </table></div>
+  </section>
+  <form class="panel stack" method="post" action="/admin/brands">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>"><% if (e.id) { %><input type="hidden" name="id" value="<%= e.id %>"><% } %>
+    <h2 style="font-size:16.5px"><%= e.id ? 'Edit ' + e.name : 'Add a brand' %></h2>
+    <label class="field"><span class="label">Name</span><input class="input" name="name" required value="<%= e.name || '' %>"></label>
+    <label class="field"><span class="label">URL handle</span><input class="input" name="slug" value="<%= e.slug || '' %>" placeholder="Made from the name"></label>
+    <label class="field"><span class="label">Description</span><textarea class="textarea" name="description" rows="3" style="min-height:80px"><%= e.description || '' %></textarea></label>
+    <label class="check"><input type="checkbox" name="featured" <%= e.featured ? 'checked' : '' %>>Show first on the home page</label>
+    <div class="row"><button class="btn btn-primary btn-sm" type="submit">Save brand</button><% if (e.id) { %><a class="btn btn-ghost btn-sm" href="/admin/brands">Cancel</a><% } %></div>
+  </form>
+</div>
+<%- include('partials/bottom', locals) %>

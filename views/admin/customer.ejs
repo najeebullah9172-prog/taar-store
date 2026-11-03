@@ -1,0 +1,22 @@
+<% locals.title = u.name; locals.sub = u.email + ', joined ' + dateFmt(u.created_at); %>
+<%- include('partials/top', locals) %>
+<div class="cols cols-main">
+  <section class="panel">
+    <div class="panel-head"><h2>Orders</h2></div>
+    <div class="t-wrap"><table class="t"><thead><tr><th>Order</th><th>Date</th><th>Status</th><th class="r">Total</th></tr></thead><tbody>
+      <% for (const o of list) { %><tr><td><a class="rowlink" href="/admin/orders/<%= o.id %>"><%= o.number %></a></td><td class="small"><%= dateFmt(o.created_at) %></td><td><%- include('partials/opill', { s: o.status }) %></td><td class="r"><%= money(o.total) %></td></tr><% } %>
+      <% if (!list.length) { %><tr class="empty-row"><td colspan="4">No orders yet.</td></tr><% } %></tbody></table></div>
+  </section>
+  <div>
+    <section class="panel stack small">
+      <div><strong>Phone</strong><br><%= formatPhone(u.phone) || 'Not given' %></div>
+      <div><strong>Marketing emails</strong><br><%= u.marketing ? 'Subscribed' : 'Not subscribed' %></div>
+      <div><strong>Last sign in</strong><br><%= u.last_login_at ? dateTimeFmt(u.last_login_at) : 'Never' %></div>
+      <% if (can('staff')) { %><form method="post" action="/admin/customers/<%= u.id %>/toggle" data-confirm="<%= u.disabled ? 'Enable' : 'Disable' %> this account?"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn <%= u.disabled ? 'btn-line' : 'btn-danger' %> btn-sm" type="submit"><%= u.disabled ? 'Enable account' : 'Disable account' %></button></form><% } %>
+    </section>
+    <section class="panel"><div class="panel-head"><h2>Addresses</h2></div>
+      <% for (const a of addresses) { %><p class="small"><strong><%= a.label || 'Address' %></strong><%= a.is_default ? ' (default)' : '' %><br><%= a.line1 %>, <%= a.city %>, <%= a.province %></p><% } %>
+      <% if (!addresses.length) { %><p class="small muted">None saved.</p><% } %></section>
+  </div>
+</div>
+<%- include('partials/bottom', locals) %>

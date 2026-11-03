@@ -1,0 +1,96 @@
+<%
+  const o = order;
+  locals.title = 'Order ' + o.number;
+  locals.sub = 'Placed ' + dateTimeFmt(o.created_at) + (o.user_id ? '' : ', guest checkout');
+  locals.actions = `<a class="btn btn-line btn-sm" href="/order/${o.number}/invoice?t=${o.access_token}" target="_blank">Invoice</a><a class="btn btn-line btn-sm" href="/admin/orders">All orders</a>`;
+  const statusText = { confirmed: 'Confirm order', processing: 'Mark as packing', shipped: 'Mark as shipped', delivered: 'Mark as delivered', cancelled: 'Cancel order', returned: 'Mark as returned' };
+%>
+<%- include('partials/top', locals) %>
+<div class="cols cols-main">
+  <div>
+    <section class="panel">
+      <div class="panel-head"><h2>Status</h2><div class="row"><%- include('partials/opill', { s: o.status }) %><%- include('partials/opill', { s: o.payment_status }) %></div></div>
+      <% if (nextStatuses.length) { %>
+      <form method="post" action="/admin/orders/<%= o.id %>/status" class="stack" data-status-form>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="row" style="flex-wrap:wrap">
+          <% for (const s of nextStatuses) { %>
+            <button class="btn <%= s === 'cancelled' ? 'btn-danger' : (s === nextStatuses[0] ? 'btn-primary' : 'btn-line') %> btn-sm" type="submit" name="status" value="<%= s %>" <%= s === 'cancelled' ? 'data-confirm-click="Cancel this order? Stock goes back to inventory and the customer is emailed."' : '' %>><%= statusText[s] %></button>
+          <% } %>
+        </div>
+        <% if (nextStatuses.includes('shipped')) { %>
+          <div class="grid-2"><label class="field"><span class="label">Courier (needed to mark as shipped)</span><select class="select" name="courier"><option value="">Choose courier</option><% for (const c of ['TCS', 'Leopards', 'M&P', 'Trax', 'PostEx', 'Call Courier', 'Own rider']) { %><option <%= o.courier === c ? 'selected' : '' %>><%= c %></option><% } %></select></label>
+          <label class="field"><span class="label">Tracking number</span><input class="input" name="tracking" value="<%= o.tracking_number || '' %>"></label></div>
+        <% } %>
+        <p class="xs muted" style="margin:0">The customer gets an email for every status change.</p>
+      </form>
+      <% } else { %><p class="muted small" style="margin:0">This order is <%= o.status %>. No further status changes.</p><% } %>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Items</h2><span class="small muted"><%= o.items.reduce((s, i) => s + i.qty, 0) %> units</span></div>
+      <div class="t-wrap"><table class="t">
+        <thead><tr><th></th><th>Product</th><th>SKU</th><th class="r">Price</th><th class="r">Qty</th><th class="r">Total</th></tr></thead>
+        <tbody><% for (const it of o.items) { %><tr><td><img class="thumb" src="<%= it.image %>" alt=""></td><td><%= it.name %><div class="xs muted"><%= it.variant_label %></div></td><td class="small"><%= it.sku %></td><td class="r"><%= money(it.price) %></td><td class="r"><%= it.qty %></td><td class="r"><%= money(it.price * it.qty) %></td></tr><% } %></tbody>
+      </table></div>
+      <div class="totals" style="max-width:340px;margin:16px 0 0 auto">
+        <div><span>Subtotal</span><span><%= money(o.subtotal) %></span></div>
+        <% if (o.discount) { %><div class="disc"><span>Discount <%= o.coupon_code ? '(' + o.coupon_code + ')' : '' %></span><span>&minus;<%= money(o.discount) %></span></div><% } %>
+        <div><span>Delivery (<%= o.shipping_method %>, <%= o.shipping_zone %>)</span><span><%= money(o.shipping) %></span></div>
+        <% if (o.payment_fee) { %><div><span>COD fee</span><span><%= money(o.payment_fee) %></span></div><% } %>
+        <div class="grand"><span>Total</span><span><%= money(o.total) %></span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Timeline</h2></div>
+      <ol class="timeline timeline-adm">
+        <% for (const e of o.events.slice().reverse()) { %><li><span class="node"></span><div class="what"><%= e.message %><% if (!e.public) { %><span class="private">Staff only</span><% } %></div><div class="when"><%= dateTimeFmt(e.created_at) %></div></li><% } %>
+      </ol>
+      <form method="post" action="/admin/orders/<%= o.id %>/note" class="row" style="align-items:flex-end">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label class="field grow"><span class="label">Add a staff note</span><input class="input" name="note" maxlength="1000" placeholder="For example: customer asked for delivery after 5 pm"></label>
+        <button class="btn btn-line btn-sm" type="submit" style="height:42px">Add note</button>
+      </form>
+    </section>
+  </div>
+
+  <div>
+    <section class="panel">
+      <div class="panel-head"><h2>Customer</h2></div>
+      <div class="stack small">
+        <div><strong><%= o.full_name %></strong><% if (customer) { %> <a class="link" href="/admin/customers/<%= customer.id %>">Account</a><% } else { %> <span class="muted">(guest)</span><% } %></div>
+        <div><a class="link" href="mailto:<%= o.email %>"><%= o.email %></a></div>
+        <div><a class="link" href="tel:<%= o.phone %>"><%= formatPhone(o.phone) %></a></div>
+        <div class="muted"><%= history.n %> order<%= history.n === 1 ? '' : 's' %>, <%= money(history.spent || 0) %> spent in total</div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>Delivery address</h2></div>
+      <address class="small" style="font-style:normal;line-height:1.6"><%= o.line1 %><br><% if (o.line2) { %><%= o.line2 %><br><% } %><%= o.city %>, <%= o.province %> <%= o.postal_code || '' %></address>
+      <% if (o.customer_note) { %><div class="alert alert-warn small" style="margin-top:12px"><svg class="i"><use href="#i-chat"/></svg><div><strong>Customer note:</strong> <%= o.customer_note %></div></div><% } %>
+      <% if (o.tracking_number) { %><p class="small" style="margin:12px 0 0">Shipped with <strong><%= o.courier %></strong>, tracking <strong><%= o.tracking_number %></strong></p><% } %>
+      <% if (['confirmed', 'processing', 'shipped'].includes(o.status)) { %>
+      <details style="margin-top:12px"><summary class="small link" style="cursor:pointer">Edit tracking details</summary>
+        <form method="post" action="/admin/orders/<%= o.id %>/tracking" class="stack" style="margin-top:10px"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input class="input" name="courier" placeholder="Courier" value="<%= o.courier || '' %>"><input class="input" name="tracking" placeholder="Tracking number" value="<%= o.tracking_number || '' %>">
+          <button class="btn btn-line btn-sm" type="submit">Save tracking</button></form></details>
+      <% } %>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>Payment</h2><%- include('partials/opill', { s: o.payment_status }) %></div>
+      <div class="small"><%= { cod: 'Cash on delivery', bank_transfer: 'Bank transfer', card: 'Card or wallet (online)' }[o.payment_method] %></div>
+      <% for (const p of paymentsList) { %><div class="xs muted" style="margin-top:6px"><%= p.provider %> <%= p.public_id %>: <%= p.status %><%= p.reference ? ', ref ' + p.reference : '' %></div><% } %>
+      <form method="post" action="/admin/orders/<%= o.id %>/payment" class="stack" style="margin-top:14px">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label class="field"><span class="label">Change payment status</span><select class="select" name="payment_status">
+          <% for (const p of ['unpaid', 'awaiting_verification', 'paid', 'failed', 'refunded', 'partially_refunded']) { %><option value="<%= p %>" <%= o.payment_status === p ? 'selected' : '' %>><%= p.replace(/_/g, ' ') %></option><% } %></select></label>
+        <input class="input" name="note" placeholder="Note, for example bank reference" maxlength="200">
+        <button class="btn btn-line btn-sm" type="submit">Update payment</button>
+      </form>
+      <% if (o.payment_status === 'awaiting_verification') { %><p class="xs muted" style="margin:10px 0 0">Check the transfer in your bank app before marking it paid.</p><% } %>
+    </section>
+    <% if (o.returns.length) { %><section class="panel"><div class="panel-head"><h2>Returns</h2><a class="link small" href="/admin/returns">Manage</a></div><% for (const r of o.returns) { %><div class="small"><%- include('partials/opill', { s: r.status }) %> <%= r.reason.replace(/_/g, ' ') %></div><% } %></section><% } %>
+  </div>
+</div>
+<%- include('partials/bottom', locals) %>

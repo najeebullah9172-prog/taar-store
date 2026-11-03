@@ -1,0 +1,32 @@
+<%
+  locals.title = 'Orders'; locals.sub = total + ' order' + (total === 1 ? '' : 's') + (filters.status ? ' marked ' + filters.status : '');
+  const st = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'];
+%>
+<%- include('partials/top', locals) %>
+<nav class="tabs-row" aria-label="Filter by status">
+  <a href="/admin/orders" <%= !filters.status ? 'aria-current=page' : '' %>>All</a>
+  <% for (const s of st) { %><a href="/admin/orders?status=<%= s %>" <%= filters.status === s ? 'aria-current=page' : '' %>><%= s[0].toUpperCase() + s.slice(1) %><span class="n"><%= counts[s] || 0 %></span></a><% } %>
+</nav>
+<form class="filters-row" method="get">
+  <% if (filters.status) { %><input type="hidden" name="status" value="<%= filters.status %>"><% } %>
+  <input class="input" name="q" placeholder="Order number, name, email or phone" value="<%= filters.q %>" style="min-width:280px">
+  <select class="select" name="payment"><option value="">Any payment status</option><% for (const p of ['unpaid', 'pending', 'awaiting_verification', 'paid', 'failed', 'refunded']) { %><option value="<%= p %>" <%= filters.payment === p ? 'selected' : '' %>><%= p.replace(/_/g, ' ') %></option><% } %></select>
+  <select class="select" name="method"><option value="">Any method</option><option value="cod" <%= filters.method === 'cod' ? 'selected' : '' %>>Cash on delivery</option><option value="bank_transfer" <%= filters.method === 'bank_transfer' ? 'selected' : '' %>>Bank transfer</option><option value="card" <%= filters.method === 'card' ? 'selected' : '' %>>Card or wallet</option></select>
+  <button class="btn btn-ink btn-sm" type="submit">Filter</button>
+  <% if (filters.q || filters.payment || filters.method) { %><a class="btn btn-ghost btn-sm" href="/admin/orders<%= filters.status ? '?status=' + filters.status : '' %>">Clear</a><% } %>
+</form>
+<section class="panel">
+  <div class="t-wrap"><table class="t">
+    <thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>City</th><th>Items</th><th>Status</th><th>Payment</th><th class="r">Total</th></tr></thead>
+    <tbody>
+      <% for (const o of list) { %>
+        <tr><td><a class="rowlink" href="/admin/orders/<%= o.id %>"><%= o.number %></a></td><td class="small"><%= dateTimeFmt(o.created_at) %></td>
+          <td><%= o.full_name %><div class="xs muted"><%= o.email %></div></td><td><%= o.city %></td><td><%= o.items %></td>
+          <td><%- include('partials/opill', { s: o.status }) %></td><td><%- include('partials/opill', { s: o.payment_status }) %><div class="xs muted"><%= { cod: 'COD', bank_transfer: 'Bank', card: 'Card' }[o.payment_method] %></div></td><td class="r"><%= money(o.total) %></td></tr>
+      <% } %>
+      <% if (!list.length) { %><tr class="empty-row"><td colspan="8">No orders match these filters.</td></tr><% } %>
+    </tbody>
+  </table></div>
+  <%- include('partials/pager', { page, pages, query }) %>
+</section>
+<%- include('partials/bottom', locals) %>

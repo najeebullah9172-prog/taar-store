@@ -1,0 +1,29 @@
+<%
+  locals.title = 'Products'; locals.sub = list.length + ' product' + (list.length === 1 ? '' : 's');
+  locals.actions = '<a class="btn btn-primary btn-sm" href="/admin/products/new"><svg class="i i-sm"><use href="#i-plus"/></svg>Add product</a>';
+%>
+<%- include('partials/top', locals) %>
+<form class="filters-row" method="get">
+  <input class="input" name="q" placeholder="Search by name or SKU" value="<%= filters.q || '' %>" style="min-width:260px">
+  <select class="select" name="category"><option value="">All categories</option><% for (const c of categories) { %><option value="<%= c.id %>" <%= String(filters.category) === String(c.id) ? 'selected' : '' %>><%= c.name %></option><% } %></select>
+  <select class="select" name="status"><option value="">Active and draft</option><% for (const s of ['active', 'draft', 'archived']) { %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s[0].toUpperCase() + s.slice(1) %></option><% } %></select>
+  <select class="select" name="stock"><option value="">Any stock</option><option value="low" <%= filters.stock === 'low' ? 'selected' : '' %>>Low stock (1 to 5)</option><option value="out" <%= filters.stock === 'out' ? 'selected' : '' %>>Out of stock</option></select>
+  <button class="btn btn-ink btn-sm" type="submit">Filter</button>
+</form>
+<section class="panel">
+  <div class="t-wrap"><table class="t">
+    <thead><tr><th></th><th>Product</th><th>Category</th><th>Status</th><th class="r">Price</th><th class="r">Stock</th><th class="r">Sold</th><th>Updated</th></tr></thead>
+    <tbody>
+    <% for (const p of list) { %>
+      <tr><td><img class="thumb" src="<%= p.image || '/img/favicon.svg' %>" alt=""></td>
+        <td><a class="rowlink" href="/admin/products/<%= p.id %>"><%= p.name %></a><div class="xs muted"><%= p.brand %>, <%= p.variant_count %> variant<%= p.variant_count === 1 ? '' : 's' %><%= p.featured ? ', featured' : '' %></div></td>
+        <td><%= p.category %></td><td><%- include('partials/opill', { s: p.status }) %></td>
+        <td class="r"><%= money(p.price) %><%= p.price_max > p.price ? ' to ' + money(p.price_max) : '' %></td>
+        <td class="r"><span class="<%= p.stock === 0 ? 'out-stock' : p.stock <= 5 ? 'low-stock' : '' %>" style="font-weight:600"><%= p.stock %></span></td>
+        <td class="r"><%= p.sold_count %></td><td class="small muted"><%= dateFmt(p.updated_at) %></td></tr>
+    <% } %>
+    <% if (!list.length) { %><tr class="empty-row"><td colspan="8">No products match. <a class="link" href="/admin/products/new">Add one</a>.</td></tr><% } %>
+    </tbody>
+  </table></div>
+</section>
+<%- include('partials/bottom', locals) %>

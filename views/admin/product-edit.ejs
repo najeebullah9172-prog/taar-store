@@ -1,0 +1,121 @@
+<%
+  const p = product;
+  locals.title = p.id ? p.name : 'New product';
+  locals.sub = p.id ? (locals.sales ? sales.units + ' sold, ' + money(sales.revenue) + ' revenue' : '') : 'Fill in the details, save, then add photos';
+  locals.actions = p.id ? `<a class="btn btn-line btn-sm" href="/p/${p.slug}" target="_blank"><svg class="i i-sm"><use href="#i-eye"/></svg>View in store</a>` : '';
+  const optionNames = p.option_names || [];
+  const specs = Object.entries(p.specs || {});
+  const cat = categories.find(c => String(c.id) === String(p.category_id));
+  const ferr = (k) => errors[k] ? `<div class="err">${errors[k].replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</div>` : '';
+%>
+<%- include('partials/top', locals) %>
+<% if (Object.keys(errors).length) { %><div class="alert alert-error" style="margin-bottom:16px"><svg class="i"><use href="#i-alert"/></svg><div>Fix the fields marked below, then save again.</div></div><% } %>
+<form method="post" action="/admin/products/<%= p.id || 'new' %>" data-product-form>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="form-grid">
+    <div>
+      <section class="panel">
+        <label class="field <%= errors.name ? 'has-error' : '' %>"><span class="label">Name</span><input class="input" name="name" required value="<%= p.name %>" data-name><%- ferr('name') %></label>
+        <label class="field <%= errors.short_desc ? 'has-error' : '' %>"><span class="label">Summary</span><input class="input" name="short_desc" maxlength="240" required value="<%= p.short_desc %>"><span class="hint">One sentence for product cards, search results and Google.</span><%- ferr('short_desc') %></label>
+        <label class="field"><span class="label">Description</span><textarea class="textarea" name="description" rows="8"><%= p.description %></textarea><span class="hint">Leave a blank line between paragraphs.</span></label>
+        <label class="field"><span class="label">Highlights</span><textarea class="textarea" name="highlights" rows="3" style="min-height:80px"><%= (p.highlights || []).join('\n') %></textarea><span class="hint">One per line, shown as ticks next to the buy button.</span></label>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Specifications</h2><button class="btn btn-line btn-sm" type="button" data-add-spec><svg class="i i-sm"><use href="#i-plus"/></svg>Add row</button></div>
+        <% if (cat && cat.spec_filters.length) { %><p class="xs muted" style="margin-top:-6px">Shoppers can filter <%= cat.name %> by: <strong><%= cat.spec_filters.join(', ') %></strong>. Use these exact names so the filters pick this product up.</p><% } %>
+        <div class="spec-rows" data-spec-rows>
+          <% for (const [k, v] of (specs.length ? specs : [['', '']])) { %>
+            <div class="spec-row"><input class="input" name="spec_key" placeholder="Name, e.g. RAM" value="<%= k %>"><input class="input" name="spec_val" placeholder="Value, e.g. 8 GB" value="<%= v %>"><button class="icon-btn" type="button" data-remove-row aria-label="Remove row"><svg class="i i-sm"><use href="#i-trash"/></svg></button></div>
+          <% } %>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Variants, prices and stock</h2></div>
+        <label class="field"><span class="label">Options</span><input class="input" name="option_names" value="<%= optionNames.join(', ') %>" placeholder="For example: Color, Storage" data-option-names>
+          <span class="hint">Up to three, separated by commas. Leave empty for a product with one version. Name the colour option "Color" to show swatches.</span></label>
+        <% if (errors.variants) { %><div class="alert alert-error small" style="margin-top:12px"><svg class="i"><use href="#i-alert"/></svg><div><%= errors.variants %></div></div><% } %>
+        <div class="t-wrap" style="margin-top:14px"><table class="t var-table">
+          <thead><tr data-var-head><% for (const n of optionNames) { %><th><%= n %></th><% } %><th>SKU</th><th>Price (Rs)</th><th>Compare at</th><th>Stock</th><th>On sale</th><th></th></tr></thead>
+          <tbody data-var-rows>
+            <% p.variants.forEach((v, i) => { %>
+              <tr data-var-row>
+                <% for (const n of optionNames) { %><td><input class="input" name="variants[<%= i %>][opt][<%= n %>]" value="<%= v.options[n] || '' %>" required></td><% } %>
+                <td><input type="hidden" name="variants[<%= i %>][id]" value="<%= v.id || '' %>"><input class="input" name="variants[<%= i %>][sku]" value="<%= v.sku %>" placeholder="Auto"></td>
+                <td><input class="input" name="variants[<%= i %>][price]" type="number" min="0" required value="<%= v.price %>"></td>
+                <td><input class="input" name="variants[<%= i %>][compare_price]" type="number" min="0" value="<%= v.compare_price ?? '' %>" placeholder="Optional"></td>
+                <td><input class="input" name="variants[<%= i %>][stock]" type="number" min="0" required value="<%= v.stock %>" style="min-width:70px"></td>
+                <td><label class="check"><input type="checkbox" name="variants[<%= i %>][active]" <%= v.active ? 'checked' : '' %>><span class="sr">Available</span></label></td>
+                <td><button class="icon-btn" type="button" data-remove-variant aria-label="Remove variant"><svg class="i i-sm"><use href="#i-trash"/></svg></button></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table></div>
+        <div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="btn btn-line btn-sm" type="button" data-add-variant><svg class="i i-sm"><use href="#i-plus"/></svg>Add variant</button><span class="xs muted">"Compare at" shows a struck through price and a Save badge. Variants that were ordered before are hidden instead of deleted.</span></div>
+      </section>
+    </div>
+
+    <div>
+      <section class="panel">
+        <label class="field"><span class="label">Status</span><select class="select" name="status">
+          <option value="active" <%= p.status === 'active' ? 'selected' : '' %>>Active, visible in the store</option>
+          <option value="draft" <%= p.status === 'draft' ? 'selected' : '' %>>Draft, hidden</option>
+          <option value="archived" <%= p.status === 'archived' ? 'selected' : '' %>>Archived</option></select></label>
+        <label class="check" style="margin-top:14px"><input type="checkbox" name="featured" <%= p.featured ? 'checked' : '' %>>Feature on the home page</label>
+        <label class="check" style="margin-top:8px"><input type="checkbox" name="is_new" <%= p.is_new ? 'checked' : '' %>>Show in new arrivals</label>
+      </section>
+      <section class="panel">
+        <label class="field <%= errors.category_id ? 'has-error' : '' %>"><span class="label">Category</span><select class="select" name="category_id" required><option value="">Choose</option><% for (const c of categories) { %><option value="<%= c.id %>" <%= String(p.category_id) === String(c.id) ? 'selected' : '' %>><%= c.name %></option><% } %></select><%- ferr('category_id') %></label>
+        <label class="field <%= errors.brand_id ? 'has-error' : '' %>"><span class="label">Brand</span><select class="select" name="brand_id" required><option value="">Choose</option><% for (const b of brands) { %><option value="<%= b.id %>" <%= String(p.brand_id) === String(b.id) ? 'selected' : '' %>><%= b.name %></option><% } %></select><%- ferr('brand_id') %></label>
+        <div class="grid-2" style="margin-top:14px">
+          <label class="field"><span class="label">Warranty months</span><input class="input" type="number" name="warranty_months" min="0" max="120" value="<%= p.warranty_months %>"></label>
+          <label class="field"><span class="label">Weight (grams)</span><input class="input" type="number" name="weight_g" min="1" value="<%= p.weight_g %>"></label>
+        </div>
+        <label class="field"><span class="label">Warranty text</span><input class="input" name="warranty_text" value="<%= p.warranty_text || '' %>" placeholder="12 month official warranty"></label>
+        <p class="xs muted" style="margin:8px 0 0">Weight sets the delivery charge for heavy items.</p>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Search engines</h2></div>
+        <label class="field <%= errors.slug ? 'has-error' : '' %>"><span class="label">URL handle</span><input class="input" name="slug" value="<%= p.slug %>" placeholder="Made from the name" data-slug><span class="hint">taar.pk/p/<span data-slug-preview><%= p.slug %></span></span><%- ferr('slug') %></label>
+        <label class="field"><span class="label">Page title <span class="opt">(optional)</span></span><input class="input" name="meta_title" maxlength="70" value="<%= p.meta_title || '' %>"></label>
+        <label class="field"><span class="label">Meta description <span class="opt">(optional)</span></span><textarea class="textarea" name="meta_description" maxlength="170" rows="3" style="min-height:70px"><%= p.meta_description || '' %></textarea></label>
+      </section>
+    </div>
+  </div>
+  <div class="sticky-save">
+    <a class="btn btn-ghost" href="/admin/products">Cancel</a>
+    <button class="btn btn-primary" type="submit"><%= p.id ? 'Save product' : 'Create product' %></button>
+  </div>
+</form>
+
+<% if (p.id) { %>
+<section class="panel" id="images" style="margin-top:16px">
+  <div class="panel-head"><h2>Photos</h2><span class="xs muted">JPG, PNG or WebP up to 8 MB. Converted to WebP and resized automatically.</span></div>
+  <div class="img-grid">
+    <% for (const im of p.images) { %>
+      <div class="img-card">
+        <img src="<%= im.thumb_url || im.url %>" alt="<%= im.alt %>">
+        <form method="post" action="/admin/products/<%= p.id %>/images/<%= im.id %>" class="stack" style="gap:6px">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input class="input" name="alt" value="<%= im.alt || '' %>" placeholder="Alt text" aria-label="Alt text">
+          <% if (optionNames.includes('Color')) { %><select class="select input" name="option_value" aria-label="Colour"><option value="">All colours</option><% for (const c of [...new Set(p.variants.map(v => v.options.Color).filter(Boolean))]) { %><option <%= im.option_value === c ? 'selected' : '' %>><%= c %></option><% } %></select><% } %>
+          <div class="row"><button class="btn btn-line btn-sm grow" name="action" value="save" style="height:32px">Save</button><button class="btn btn-ghost btn-sm" name="action" value="first" style="height:32px" title="Make main photo">Main</button><button class="btn btn-ghost btn-sm" name="action" value="delete" style="height:32px;color:var(--red)" data-confirm-click="Delete this photo?">Delete</button></div>
+        </form>
+      </div>
+    <% } %>
+  </div>
+  <form method="post" action="/admin/products/<%= p.id %>/images?_csrf=<%= csrfToken %>" enctype="multipart/form-data" class="row" style="margin-top:16px;flex-wrap:wrap">
+    <input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/avif" multiple required>
+    <% if (optionNames.includes('Color')) { %><select class="select" name="option_value" style="width:auto;height:40px"><option value="">For all colours</option><% for (const c of [...new Set(p.variants.map(v => v.options.Color).filter(Boolean))]) { %><option><%= c %></option><% } %></select><% } %>
+    <button class="btn btn-ink btn-sm" type="submit"><svg class="i i-sm"><use href="#i-image"/></svg>Upload photos</button>
+  </form>
+</section>
+<section class="panel" style="margin-top:16px">
+  <div class="row" style="flex-wrap:wrap">
+    <form method="post" action="/admin/products/<%= p.id %>/duplicate"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-line btn-sm" type="submit"><svg class="i i-sm"><use href="#i-copy"/></svg>Duplicate as draft</button></form>
+    <% if (p.status !== 'archived') { %><form method="post" action="/admin/products/<%= p.id %>/archive" data-confirm="Archive <%= p.name %>? It disappears from the store; past orders are kept."><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-danger btn-sm" type="submit">Archive product</button></form><% } %>
+  </div>
+</section>
+<% } %>
+<%- include('partials/bottom', locals) %>

@@ -1,0 +1,81 @@
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <header class="page-head"><h1>Your cart</h1></header>
+  <% if (!summary.lines.length) { %>
+    <div class="empty">
+      <svg class="i"><use href="#i-bag"/></svg>
+      <h2>Your cart is empty</h2>
+      <p>Browse our best sellers or search for what you need. Your cart is saved on this device for 30 days.</p>
+      <a class="btn btn-ink" href="/shop">Start shopping</a>
+    </div>
+  <% } else { %>
+  <div class="cart-page" data-cart-page>
+    <section class="card" aria-label="Items">
+      <% if (summary.toFree > 0) { const pct = Math.min(100, Math.round((1 - summary.toFree / summary.freeOver) * 100)); %>
+        <div class="free-meter">
+          <p>Add <strong class="num"><%= money(summary.toFree) %></strong> more for free standard delivery<%= summary.city ? ' to ' + summary.city : '' %>.</p>
+          <div class="meter"><span style="width:<%= pct %>%"></span></div>
+        </div>
+      <% } else if (summary.freeOver) { %>
+        <div class="free-meter"><p><strong>Your order qualifies for free standard delivery.</strong></p><div class="meter done"><span style="width:100%"></span></div></div>
+      <% } %>
+      <div>
+        <% for (const l of summary.lines) { %>
+          <div class="line" data-line="<%= l.variant_id %>">
+            <a class="line-img" href="/p/<%= l.slug %>"><img src="<%= l.image %>" alt="" loading="lazy"></a>
+            <div>
+              <a class="line-name" href="/p/<%= l.slug %>"><%= l.name %></a>
+              <% if (l.variant_label) { %><div class="line-var"><%= l.variant_label %></div><% } %>
+              <% if (l.problem) { %><div class="line-problem"><%= l.problem %></div><% } %>
+              <div class="line-controls">
+                <div class="qty qty-sm" data-line-qty="<%= l.variant_id %>">
+                  <button type="button" data-qty-step="-1" aria-label="Decrease quantity"><svg class="i i-sm"><use href="#i-minus"/></svg></button>
+                  <label class="sr" for="lq<%= l.variant_id %>">Quantity</label>
+                  <input id="lq<%= l.variant_id %>" type="number" min="1" max="<%= Math.max(1, Math.min(l.stock, 99)) %>" value="<%= l.qty %>" inputmode="numeric">
+                  <button type="button" data-qty-step="1" aria-label="Increase quantity" <%= l.qty >= l.stock ? 'disabled' : '' %>><svg class="i i-sm"><use href="#i-plus"/></svg></button>
+                </div>
+                <button class="remove-btn" type="button" data-remove="<%= l.variant_id %>">Remove</button>
+              </div>
+            </div>
+            <div class="line-price price"><%= money(l.line_total) %><% if (l.qty > 1) { %><span class="unit"><%= money(l.price) %> each</span><% } %></div>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <aside class="card summary-card" aria-label="Order summary">
+      <h2 style="font-size:20px;margin-bottom:18px">Summary</h2>
+      <div class="stack">
+        <% if (summary.coupon && summary.coupon.ok) { %>
+          <div class="coupon-tag"><span><%= summary.coupon.code %> applied</span><button type="button" data-coupon-remove>Remove</button></div>
+        <% } else { %>
+          <form class="coupon-form" data-coupon-form>
+            <label class="sr" for="coupon">Discount code</label>
+            <input class="input" id="coupon" name="code" placeholder="Discount code" maxlength="40" autocomplete="off" value="<%= summary.coupon && !summary.coupon.ok ? summary.coupon.code : '' %>">
+            <button class="btn btn-line" type="submit">Apply</button>
+          </form>
+          <% if (summary.coupon && !summary.coupon.ok) { %><div class="err"><%= summary.coupon.message %></div><% } %>
+        <% } %>
+        <div>
+          <label class="label" for="ship-city">Estimate delivery</label>
+          <select class="select" id="ship-city" data-ship-city>
+            <option value="">Choose your city</option>
+            <% for (const c of cities) { %><option <%= summary.city === c ? 'selected' : '' %>><%= c %></option><% } %>
+          </select>
+        </div>
+      </div>
+      <div class="totals" style="margin-top:20px">
+        <div><span>Subtotal (<%= summary.count %> item<%= summary.count === 1 ? '' : 's' %>)</span><span class="num"><%= money(summary.subtotal) %></span></div>
+        <% if (summary.discount) { %><div class="disc"><span>Discount</span><span class="num">&minus;<%= money(summary.discount) %></span></div><% } %>
+        <div><span>Delivery<%= summary.shippingMethod ? ' to ' + summary.city : '' %></span><span class="num"><%= summary.shippingMethod ? (summary.shipping ? money(summary.shipping) : 'Free') : 'Choose city' %></span></div>
+        <% if (summary.shippingMethod) { %><div class="xs muted" style="margin-top:-6px"><span><%= summary.shippingMethod.label %>, <%= summary.shippingMethod.eta %></span></div><% } %>
+        <div class="grand"><span>Total</span><span class="num"><%= money(summary.total) %></span></div>
+      </div>
+      <a class="btn btn-primary btn-block btn-lg" href="/checkout" style="margin-top:20px" <%= summary.hasProblems ? 'aria-disabled=true' : '' %>>Check out</a>
+      <% if (summary.hasProblems) { %><p class="err">Update the items marked above before checking out.</p><% } %>
+      <div class="secure-note"><svg class="i i-sm"><use href="#i-lock"/></svg>Secure checkout. Cash on delivery available.</div>
+    </aside>
+  </div>
+  <% } %>
+</div>
+<%- include('../partials/bottom', locals) %>

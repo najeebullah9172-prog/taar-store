@@ -1,0 +1,6 @@
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <header class="page-head"><h1>Brands</h1><p>Every product comes from the brand or its authorised distributor in Pakistan.</p></header>
+  <div class="brands-grid"><% for (const b of brands) { %><a href="/brand/<%= b.slug %>"><span><%= b.name %><small><%= plural(b.product_count, 'product') %></small></span></a><% } %></div>
+</div>
+<%- include('../partials/bottom', locals) %>

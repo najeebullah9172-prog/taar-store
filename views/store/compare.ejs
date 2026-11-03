@@ -1,0 +1,30 @@
+<%- include('../partials/top', locals) %>
+<div class="wrap">
+  <header class="page-head"><h1>Compare products</h1><p>Rows where all products are the same are shown in grey.</p></header>
+  <% if (products.length < 2) { %>
+    <div class="empty"><svg class="i"><use href="#i-compare"/></svg><h2>Add at least two products to compare</h2><p>Use the compare button on any product page. You can compare up to four at a time.</p><a class="btn btn-ink" href="/shop">Browse products</a></div>
+  <% } else { %>
+  <div class="compare-wrap">
+    <table class="compare">
+      <thead><tr><th></th><% for (const p of products) { %><td>
+        <a href="/p/<%= p.slug %>" style="display:block;background:var(--tile);border-radius:var(--r);aspect-ratio:1;max-width:180px;padding:10px"><img src="<%= p.image %>" alt=""></a>
+        <div class="pcard-brand" style="margin-top:10px"><%= p.brand %></div><a href="/p/<%= p.slug %>" style="font-weight:600"><%= p.name %></a>
+        <div class="price" style="font-weight:700;margin-top:6px"><%= money(p.price) %></div>
+        <div class="row" style="margin-top:10px">
+          <% if (p.variant_count === 1 && p.quick_variant) { %><button class="btn btn-primary btn-sm" type="button" data-add="<%= p.quick_variant %>">Add to cart</button><% } else { %><a class="btn btn-primary btn-sm" href="/p/<%= p.slug %>">Choose options</a><% } %>
+          <button class="btn btn-ghost btn-sm" type="button" data-compare-remove="<%= p.id %>">Remove</button>
+        </div>
+      </td><% } %></tr></thead>
+      <tbody>
+        <tr><th scope="row">Rating</th><% for (const p of products) { %><td><%= p.rating_count ? p.rating_avg.toFixed(1) + ' from ' + p.rating_count : 'No reviews' %></td><% } %></tr>
+        <tr><th scope="row">Availability</th><% for (const p of products) { %><td class="<%= p.in_stock ? 'in-stock' : 'out-stock' %>"><%= p.in_stock ? 'In stock' : 'Out of stock' %></td><% } %></tr>
+        <tr><th scope="row">Warranty</th><% for (const p of products) { %><td><%= p.warranty_months %> months</td><% } %></tr>
+        <% for (const k of keys) { const vals = products.map(p => p.specs[k] || ''); const same = vals.every(x => x === vals[0]); %>
+          <tr class="<%= same ? 'same' : '' %>"><th scope="row"><%= k %></th><% for (const val of vals) { %><td><%= val || 'Not listed' %></td><% } %></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+<%- include('../partials/bottom', locals) %>
